@@ -21,7 +21,7 @@
 | 路由 | React Router v7 |
 | 样式 | Tailwind v4 + shadcn/ui |
 | 状态 | Zustand（persist 中间件持久化 settings / 草稿到 localStorage） |
-| LLM 调用 | Vercel AI SDK v5（`ai` + `@ai-sdk/openai`，自定义 `baseURL`） |
+| LLM 调用 | Vercel AI SDK（`ai` v7 + `@ai-sdk/openai`，自定义 `baseURL`） |
 | Markdown 编辑 | CodeMirror 6 |
 | Markdown 渲染 | react-markdown + remark-gfm + **rehype-sanitize** |
 | 工具链 | Biome（lint + format）、Vitest、Playwright |
@@ -38,17 +38,42 @@
 
 ## 目录约定
 
-<!-- 脚手架落地后补充实际结构。预期：
-  src/pages/{resume,polish,tools}/  — 三个页面
-  src/lib/llm/                      — AI SDK 封装、provider 配置
-  src/lib/markdown/                 — 渲染 + sanitize 配置
-  src/stores/                       — Zustand stores
-  src/components/ui/                — shadcn 组件
--->
+```
+src/
+  main.tsx                       # 挂载 RouterProvider
+  App.tsx                        # createBrowserRouter：根布局 + 三路由（SPA/library 模式）
+  index.css                      # Tailwind v4 + shadcn 主题变量
+  components/
+    layout/RootLayout.tsx        # 顶部导航 + <Outlet/>
+    layout/SettingsDialog.tsx    # endpoint / apiKey / model 表单 → settings store
+    ui/                          # shadcn 组件（Base UI 底座，用 render 而非 asChild）
+  pages/
+    resume/ResumePage.tsx        # 简历（占位，待做编辑器 + 打印导出）
+    polish/PolishPage.tsx        # 文风（已跑通的流式润色竖切片）
+    tools/ToolsPage.tsx          # 工具（占位）
+  lib/
+    llm/client.ts                # streamCompletion：createOpenAI + streamText 流式封装
+    llm/types.ts
+    markdown/sanitize.ts         # 共享 rehype-sanitize schema
+    markdown/MarkdownPreview.tsx # 唯一的 Markdown 渲染入口（已内置 sanitize）
+    utils.ts                     # shadcn 的 cn()
+  stores/settings.ts             # zustand + persist → localStorage（endpoint/apiKey/model）
+  test/setup.ts                  # vitest + jest-dom
+```
+
+> 注意：shadcn 用的是 **Base UI** 底座（不是 Radix），Trigger/Close 等用 `render={<El/>}` 属性，
+> 没有 `asChild`。
 
 ## 命令
 
-<!-- 脚手架落地后补充：dev / build / test / lint 的实际命令 -->
+| 命令 | 作用 |
+|---|---|
+| `pnpm dev` | 启动本地开发服务器（Vite） |
+| `pnpm build` | 类型检查（`tsc -b`）+ 构建静态产物到 `dist/` |
+| `pnpm preview` | 本地预览构建产物 |
+| `pnpm lint` | Biome 检查（lint + format 校验）。`src/components/ui/**` 与 `*.css` 不纳入 lint |
+| `pnpm format` | Biome 按规则格式化并写回 |
+| `pnpm test` | 运行 Vitest（`pnpm test run` 单次跑完退出） |
 
 ## 工作方式
 

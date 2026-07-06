@@ -22,7 +22,15 @@ pnpm install
 pnpm dev
 ```
 
-> 命令与实际脚本以 `package.json` 为准（项目脚手架落地后补充完整命令表）。
+常用命令：
+
+| 命令 | 作用 |
+|---|---|
+| `pnpm dev` | 启动本地开发服务器 |
+| `pnpm build` | 构建静态产物到 `dist/` |
+| `pnpm preview` | 预览构建产物 |
+| `pnpm lint` / `pnpm format` | 代码检查 / 格式化（Biome） |
+| `pnpm test` | 运行测试（Vitest） |
 
 ## 🔑 配置 AI 能力
 
