@@ -1,0 +1,60 @@
+name: Supersede Cost Report Issues
+
+# When a new Claude Code cost-report issue appears, close every *earlier*
+# cost-report issue so only the latest one stays open (a rolling report).
+on:
+  issues:
+    types: [opened, labeled]
+
+# Serialize runs so two reports arriving close together can't race and leave
+# more than one open. Don't cancel an in-flight run — let it finish closing.
+concurrency:
+  group: cost-report-supersede
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+
+jobs:
+  supersede:
+    # Only act on cost-report issues. On `labeled` this also fires for other
+    # labels, so the guard keeps us from running on unrelated events.
+    if: contains(github.event.issue.labels.*.name, 'cost-report')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Close earlier cost-report issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # --limit overrides gh's default page size of 30; without it, older
+          # reports beyond the first 30 would silently never be closed.
+          # We close only issues *older* than the current one (number < CURRENT):
+          # that matches "close all previous" and, if an old issue is ever
+          # re-labeled by hand, we won't accidentally close the newest report.
+          mapfile -t stale < <(
+            gh issue list \
+              --repo "$REPO" \
+              --label cost-report \
+              --state open \
+              --limit 500 \
+              --json number \
+              --jq ".[] | select(.number < ${CURRENT}) | .number"
+          )
+
+          if [ "${#stale[@]}" -eq 0 ]; then
+            echo "No earlier cost-report issues to supersede."
+            exit 0
+          fi
+
+          for num in "${stale[@]}"; do
+            echo "Superseding #${num} with #${CURRENT}"
+            gh issue close "$num" \
+              --repo "$REPO" \
+              --reason "not planned" \
+              --comment "Superseded by the latest cost report (#${CURRENT})."
+          done
