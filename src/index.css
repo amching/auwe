@@ -10,6 +10,17 @@
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', system-ui, 'PingFang SC', 'Hiragino Sans GB',
         'Microsoft YaHei', sans-serif;
+    --font-mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, Consolas,
+        monospace;
+    --font-paper: 'Noto Sans SC', 'Geist Variable', system-ui,
+        'Hiragino Sans GB', sans-serif;
+    /* App UI 字号系统：12 / 13 / 14，行高受控（用 text-ui-xs / text-ui-sm / text-ui） */
+    --text-ui-xs: 0.75rem;
+    --text-ui-xs--line-height: 1rem;
+    --text-ui-sm: 0.8125rem;
+    --text-ui-sm--line-height: 1.125rem;
+    --text-ui: 0.875rem;
+    --text-ui--line-height: 1.25rem;
     --color-desk: var(--desk);
     --color-warning: var(--warning);
     --color-success: var(--success);
@@ -29,6 +40,10 @@
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
+    --color-border-strong: var(--border-strong);
+    --color-info: var(--info);
+    --color-primary-hover: var(--primary-hover);
+    --color-faint: var(--text-muted);
     --color-destructive: var(--destructive);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
@@ -51,34 +66,86 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    /* 语义 radius：button/panel/dropdown/paper（可直接用 rounded-button 等） */
+    --radius-button: 0.5rem;
+    --radius-panel: 0.875rem;
+    --radius-dropdown: 0.625rem;
+    --radius-paper: 0.1875rem;
+    /* 语义 shadow：克制、多层低透明度（用 shadow-panel / shadow-command / shadow-paper） */
+    --shadow-panel: 0 1px 2px 0 oklch(0.28 0.02 170 / 0.05);
+    --shadow-command: 0 4px 12px -2px oklch(0.28 0.02 170 / 0.1),
+        0 2px 6px -2px oklch(0.28 0.02 170 / 0.08);
+    --shadow-paper: var(--paper-shadow);
 }
 
 :root {
-  /* App UI —— 唯一彩色 hue = 灰湖青 ~190° */
-  --background: oklch(0.975 0.004 180); /* #F5F8F7 青倾向暖白，非纯白 */
-  --foreground: oklch(0.24 0.012 180); /* #222B28 青灰黑，非纯黑 */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.012 180);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.012 180);
-  --primary: oklch(0.48 0.06 190); /* #2F6B67 灰湖青深 */
-  --primary-foreground: oklch(0.985 0.004 180);
-  --secondary: oklch(0.955 0.006 182);
-  --secondary-foreground: oklch(0.24 0.012 180);
-  --muted: oklch(0.955 0.006 182); /* #EDF3F1 弱底/hover 面 */
-  --muted-foreground: oklch(0.52 0.015 180); /* #5D6B67 次级文字 */
-  --accent: oklch(0.955 0.006 182);
-  --accent-foreground: oklch(0.24 0.012 180);
-  --destructive: oklch(0.55 0.14 25); /* #B0554A 降饱和砖红 */
-  --border: oklch(0.915 0.01 180); /* #DFE8E5 */
-  --input: oklch(0.915 0.01 180);
-  --ring: oklch(0.6 0.06 190); /* #4E8A84 青色聚焦环 */
+  /* ============================================================
+   * Design tokens — Resume/Paper Studio · Linear-like app quality
+   * 中性冷灰绿画布 + 白面板 + 深墨绿主操作。唯一 hue 家族 ~165–170°，低噪声。
+   * （不支持暗色；下方 .dark 保留但不维护。）
+   * ============================================================ */
+
+  /* —— 表面 Surfaces —— */
+  --background: oklch(0.965 0.006 170); /* app 画布：柔和浅灰绿 */
+  --card: oklch(1 0 0); /* 面板：白 */
+  --popover: oklch(1 0 0); /* 悬浮/elevated：白 */
+  --desk: oklch(0.938 0.008 170); /* 预览台面：比画布略深的柔和灰绿，衬白纸更跳、有层次 */
+
+  /* —— 文字 Text（三级）—— */
+  --foreground: oklch(0.28 0.012 170); /* primary：近黑灰绿 */
+  --card-foreground: oklch(0.28 0.012 170);
+  --popover-foreground: oklch(0.28 0.012 170);
+  --muted-foreground: oklch(0.5 0.01 170); /* secondary */
+  --text-muted: oklch(0.62 0.008 170); /* muted：占位/提示/统计 */
+
+  /* —— 主操作 Primary（深墨绿·近黑·不刺眼）—— */
+  --primary: oklch(0.33 0.045 162);
+  --primary-foreground: oklch(0.98 0.005 170);
+  --primary-hover: oklch(0.27 0.045 162); /* 比 primary 更深，hover 加重 */
+
+  /* —— 弱底 / 选中 / hover —— */
+  --secondary: oklch(0.93 0.006 170);
+  --secondary-foreground: oklch(0.28 0.012 170);
+  --muted: oklch(0.945 0.006 170);
+  --accent: oklch(0.945 0.006 170);
+  --accent-foreground: oklch(0.28 0.012 170);
+
+  /* —— 边框 Borders（低对比发丝 + 强边框）—— */
+  --border: oklch(0.912 0.006 170);
+  --border-strong: oklch(0.86 0.008 170);
+  --input: oklch(0.912 0.006 170);
+  --ring: oklch(0.45 0.05 162); /* 聚焦环：墨绿 */
+
+  /* —— 状态色 Status（去饱和，仅状态用）—— */
+  --success: oklch(0.55 0.08 158);
+  --warning: oklch(0.62 0.09 75);
+  --destructive: oklch(0.55 0.13 25); /* error */
+  --info: oklch(0.55 0.06 235);
+
+  /* —— 语义间距 Spacing（命名值，落在 4px 网格）—— */
+  --space-page: 1.5rem; /* 24 页面/外边距 */
+  --space-panel-gap: 0.75rem; /* 12 面板间距 */
+  --space-toolbar-x: 1.5rem; /* 24 工具栏水平内距 */
+  --space-button-gap: 0.5rem; /* 8  按钮内元素间距 */
+
+  --radius: 0.625rem;
+
+  /* —— 简历纸：白底黑墨，恒定，不随主题（仅 resume.css）—— */
+  --paper: #ffffff;
+  --paper-ink: #1f1f1f;
+  --paper-ink-muted: #555555;
+  --paper-rule: #e2e2e2;
+  --paper-shadow: 0 0 0 1px oklch(0.28 0.02 170 / 0.04),
+    0 1px 2px oklch(0.28 0.02 170 / 0.05),
+    0 8px 24px -8px oklch(0.28 0.02 170 / 0.12),
+    0 24px 56px -28px oklch(0.28 0.02 170 / 0.12);
+
+  /* —— charts / sidebar（沿用，当前未使用）—— */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -87,17 +154,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  /* 状态色：只用于状态，不用于装饰/按钮底 */
-  --warning: oklch(0.55 0.1 80); /* #8F6A25 */
-  --success: oklch(0.55 0.09 160); /* #3E7D5F */
-  /* 品牌画面：灰湖青桌面 */
-  --desk: oklch(0.875 0.018 185); /* #C8D8D5 */
-  /* 简历纸：白底黑墨，恒定，不随主题切换（仅 resume.css 使用） */
-  --paper: #ffffff;
-  --paper-ink: #1f1f1f;
-  --paper-ink-muted: #555555;
-  --paper-rule: #dddddd;
-  --paper-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.18);
 }
 
 .dark {
@@ -148,4 +204,36 @@
   html {
     @apply font-sans;
   }
+}
+
+/*
+ * 弱化滚动条：细、半透明、hover 才略显——用于 workspace 的内部滚动区
+ * （预览台面 .scroll-subtle + 编辑器 CodeMirror 的 .cm-scroller）。
+ */
+.scroll-subtle,
+.cm-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 16%, transparent)
+    transparent;
+}
+.scroll-subtle::-webkit-scrollbar,
+.cm-scroller::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.scroll-subtle::-webkit-scrollbar-track,
+.cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-subtle::-webkit-scrollbar-thumb,
+.cm-scroller::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--foreground) 14%, transparent);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 9999px;
+}
+.scroll-subtle:hover::-webkit-scrollbar-thumb,
+.cm-scroller:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--foreground) 26%, transparent);
+  background-clip: padding-box;
 }

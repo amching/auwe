@@ -48,7 +48,7 @@ interface ResumePreviewProps {
 export function ResumePreview({ markdown }: ResumePreviewProps) {
   return (
     <div
-      className="mx-auto w-full max-w-[210mm] rounded-sm px-[16mm] py-[14mm]"
+      className="mx-auto w-full max-w-[210mm] rounded-paper px-[16mm] py-[14mm]"
       style={{
         background: "var(--paper)",
         boxShadow: "var(--paper-shadow)",

@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, EyeIcon, FileTextIcon } from "lucide-react";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,21 +47,23 @@ export function ResumePage() {
   const [resetOpen, setResetOpen] = useState(false);
 
   const charCount = markdown.replace(/\s/g, "").length;
+  // 章节数：markdown 里行首 `## ` 的数量（H2 = 简历章节）。纯派生只读，不改任何逻辑。
+  const sectionCount = (markdown.match(/^##\s/gm) ?? []).length;
   const hasContent = markdown.trim().length > 0;
 
   return (
-    <section className="flex h-[calc(100svh-3.5rem)] flex-col">
+    <section className="flex h-[calc(100svh-3.5rem)] flex-col overflow-hidden bg-background">
       {/* 小屏 tab 切换（lg 以上隐藏，双栏并排） */}
-      <div className="flex shrink-0 border-b lg:hidden">
+      <div className="flex h-11 shrink-0 border-b lg:hidden">
         {(["edit", "preview"] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
             className={cn(
-              "flex-1 py-2 text-sm transition-colors",
+              "flex-1 py-2 text-ui font-medium transition-colors",
               tab === t
-                ? "border-b-2 border-primary font-medium text-foreground"
+                ? "border-b-2 border-primary text-foreground"
                 : "text-muted-foreground",
             )}
           >
@@ -69,42 +72,70 @@ export function ResumePage() {
         ))}
       </div>
 
-      <div className="flex min-h-0 flex-1">
-        {/* 编辑器 */}
+      <div className="flex min-h-0 flex-1 lg:gap-4 lg:px-6 lg:py-4">
+        {/* Editor Panel：白面板，浮起（发丝边 + 极淡阴影 + 面板圆角） */}
         <div
           className={cn(
-            "min-h-0 flex-col overflow-hidden border-r lg:flex lg:w-[42%] lg:min-w-[360px] lg:flex-none",
+            "min-h-0 flex-col overflow-hidden bg-card lg:flex lg:w-[42%] lg:min-w-[360px] lg:flex-none lg:rounded-panel lg:border lg:shadow-panel",
             tab === "edit" ? "flex flex-1" : "hidden",
           )}
         >
-          <MarkdownEditor value={markdown} onChange={setMarkdown} />
+          <EditorPanelHeader />
+          <div className="min-h-0 flex-1">
+            <MarkdownEditor value={markdown} onChange={setMarkdown} />
+          </div>
         </div>
 
-        {/* 预览纸 / 空状态 */}
+        {/* Preview Stage：面板 = 顶部工具条 + 内部滚动台面（纸在其中浮起） */}
         <div
           className={cn(
-            "min-h-0 flex-1 overflow-auto bg-desk p-8 lg:block",
-            tab === "preview" ? "block" : "hidden",
+            "min-h-0 flex-col overflow-hidden bg-desk lg:flex lg:flex-1 lg:rounded-panel lg:border lg:shadow-panel",
+            tab === "preview" ? "flex flex-1" : "hidden",
           )}
         >
-          {hasContent ? (
-            <ResumePreview markdown={markdown} />
-          ) : (
-            <EmptyState onRestore={resetToTemplate} />
-          )}
+          <PreviewStageHeader />
+          <div className="scroll-subtle min-h-0 flex-1 overflow-auto px-6 py-10 lg:px-12 lg:py-16 xl:px-16">
+            {hasContent ? (
+              <ResumePreview markdown={markdown} />
+            ) : (
+              <EmptyState onRestore={resetToTemplate} />
+            )}
+          </div>
         </div>
       </div>
 
-      {/* 工具栏 */}
-      <div className="flex shrink-0 items-center justify-between border-t bg-background px-4 py-2">
-        <div className="flex items-center gap-3">
-          <span className="text-[13px] text-muted-foreground tabular-nums">
+      {/* Command Bar：左状态 / 中上下文 / 右操作（三栏 grid，与顶栏呼应） */}
+      <div className="grid h-14 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 border-t bg-background/80 px-6 backdrop-blur-md">
+        {/* 左：状态区 —— 字数 · 章节数 · 自动保存 */}
+        <div className="flex items-center gap-3 text-ui-sm text-faint">
+          <span className="tabular-nums text-muted-foreground">
             {charCount} 字
           </span>
+          <span aria-hidden className="hidden h-3 w-px bg-border sm:block" />
+          <span className="hidden tabular-nums sm:inline">
+            {sectionCount} 节
+          </span>
+          <span aria-hidden className="hidden h-3 w-px bg-border sm:block" />
+          <span className="hidden sm:inline">
+            {hasContent ? "可导出" : "待补充内容"}
+          </span>
+        </div>
+
+        {/* 中：上下文 —— 模式 · 模板 */}
+        <div className="hidden items-center gap-1.5 justify-self-center text-ui-sm text-faint md:flex">
+          <span>简历</span>
+          <span aria-hidden className="text-border-strong">
+            ·
+          </span>
+          <span className="text-muted-foreground">Clean 模板</span>
+        </div>
+
+        {/* 右：操作区 —— 重置（次级）· 导出（primary 深色） */}
+        <div className="flex items-center gap-2 justify-self-end">
           <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
             <AlertDialogTrigger
               render={
-                <Button variant="ghost" size="sm" disabled={!hasContent}>
+                <Button variant="outline" disabled={!hasContent}>
                   重置模板
                 </Button>
               }
@@ -130,26 +161,67 @@ export function ResumePage() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button disabled={!hasContent}>
-                导出
-                <ChevronDownIcon />
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => downloadMarkdown(markdown)}>
-              导出 Markdown
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={print}>导出 PDF</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button disabled={!hasContent}>
+                  导出
+                  <ChevronDownIcon />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => downloadMarkdown(markdown)}>
+                导出 Markdown
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={print}>导出 PDF</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </section>
+  );
+}
+
+// Editor Panel 顶部轻量工具条：文件名 + 模式标签 + 自动保存状态。
+// 纯展示：内容经 zustand persist 每次编辑即写入 localStorage，故"自动保存"为实。
+function EditorPanelHeader() {
+  return (
+    <div className="flex h-9 shrink-0 items-center gap-2.5 border-b bg-card px-3">
+      <FileTextIcon aria-hidden className="size-3.5 shrink-0 text-faint" />
+      <span className="text-ui-sm font-medium text-foreground">Resume.md</span>
+      <Badge className="px-1.5 py-0 text-ui-xs font-medium text-muted-foreground">
+        Markdown
+      </Badge>
+      <span className="ml-auto flex items-center gap-1.5 text-ui-xs text-faint">
+        <span aria-hidden className="size-1.5 rounded-full bg-success/80" />
+        自动保存
+      </span>
+    </div>
+  );
+}
+
+// Preview Stage 顶部轻量工具条：预览标识 + A4 + 模板名 + 缩放状态。
+// 纯展示：不引入缩放逻辑，"100%" 为当前自然尺寸的状态标签，非可点控件。
+function PreviewStageHeader() {
+  return (
+    <div className="flex h-9 shrink-0 items-center gap-2.5 border-b bg-card px-3">
+      <EyeIcon aria-hidden className="size-3.5 shrink-0 text-faint" />
+      <span className="text-ui-sm font-medium text-foreground">预览</span>
+      <Badge className="px-1.5 py-0 text-ui-xs font-medium text-muted-foreground">
+        A4
+      </Badge>
+      <span className="text-ui-xs text-faint">Clean</span>
+      <div className="ml-auto flex items-center gap-2 text-ui-xs text-faint">
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden className="size-1.5 rounded-full bg-success/80" />
+          已同步
+        </span>
+        <span aria-hidden className="h-3 w-px bg-border" />
+        <span className="tabular-nums">100%</span>
+      </div>
+    </div>
   );
 }
 
@@ -159,8 +231,8 @@ function EmptyState({ onRestore }: { onRestore: () => void }) {
   return (
     <div className="mx-auto flex h-full max-w-sm flex-col items-center justify-center gap-4 text-center text-muted-foreground">
       <svg
-        width="56"
-        height="56"
+        width="40"
+        height="40"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -172,7 +244,9 @@ function EmptyState({ onRestore }: { onRestore: () => void }) {
         <path d="M14 3v4a1 1 0 0 0 1 1h4" />
         <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z" />
       </svg>
-      <p className="text-sm">还没有内容。开始写，或恢复内置模板。</p>
+      <p className="text-ui leading-relaxed">
+        还没有内容。开始写，或恢复内置模板。
+      </p>
       <Button variant="outline" size="sm" onClick={onRestore}>
         恢复模板
       </Button>

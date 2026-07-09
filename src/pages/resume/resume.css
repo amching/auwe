@@ -11,7 +11,7 @@
   font-family: "Noto Sans SC", system-ui, "Heiti SC", "Hiragino Sans GB",
     sans-serif;
   font-size: 10pt;
-  line-height: 1.55;
+  line-height: 1.62;
   color: var(--paper-ink);
 }
 
@@ -19,6 +19,7 @@
 .resume-paper h1 {
   font-size: 22pt;
   font-weight: 600;
+  letter-spacing: -0.01em;
   text-align: center;
   margin: 0 0 2pt;
 }
@@ -31,11 +32,11 @@
   margin: 0 0 12pt;
 }
 
-/* 节标题：H2 → 12pt + 下缘细线 */
+/* 节标题：H2 → 13pt + 下缘细线（与 10.5pt 的条目标题拉开层级） */
 .resume-paper h2 {
-  font-size: 12pt;
+  font-size: 13pt;
   font-weight: 600;
-  margin: 14pt 0 6pt;
+  margin: 16pt 0 6pt;
   padding-bottom: 3pt;
   border-bottom: 0.5pt solid var(--paper-rule);
 }

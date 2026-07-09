@@ -38,7 +38,7 @@ export function SettingsDialog({ trigger }: { trigger?: React.ReactElement }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>AI 设置（BYOK）</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="leading-relaxed">
             填入你自己的 OpenAI 兼容 Endpoint 与 API
             Key。这些值只保存在你的浏览器本地，绝不上传。
           </DialogDescription>

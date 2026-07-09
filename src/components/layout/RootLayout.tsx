@@ -1,11 +1,13 @@
+import { SettingsIcon } from "lucide-react";
 import { Suspense } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function PageFallback() {
   return (
-    <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+    <div className="flex flex-1 items-center justify-center text-ui text-muted-foreground">
       加载中…
     </div>
   );
@@ -19,11 +21,26 @@ const NAV = [
 
 export function RootLayout() {
   return (
-    <div className="min-h-svh flex flex-col">
-      <header className="border-b">
-        <div className="flex h-14 items-center gap-6 px-4">
-          <span className="font-heading text-lg font-semibold">auwe</span>
-          <nav className="flex items-center gap-1">
+    <div className="flex min-h-svh flex-col">
+      {/* App shell header：56px、半透明 canvas 底 + 发丝下边、三栏 grid（导航真居中）。 */}
+      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur-md">
+        <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
+          {/* 左：品牌 + 副标题（细竖线分隔） */}
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="font-heading text-ui font-semibold tracking-tight text-foreground">
+              auwe
+            </span>
+            <span
+              aria-hidden
+              className="h-3.5 w-px shrink-0 bg-border-strong"
+            />
+            <span className="truncate text-ui-xs font-medium tracking-wide text-faint">
+              职场工具站
+            </span>
+          </div>
+
+          {/* 中：主导航（segmented；激活态 = subtle 填充 + radius，非普通按钮） */}
+          <nav className="flex items-center gap-0.5 justify-self-center">
             {NAV.map((item) => (
               <NavLink
                 key={item.to}
@@ -31,10 +48,10 @@ export function RootLayout() {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    "rounded-md px-3 py-1.5 text-sm transition-colors",
+                    "rounded-md px-2.5 py-1.5 text-ui-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
                     isActive
-                      ? "bg-secondary text-secondary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )
                 }
               >
@@ -42,8 +59,21 @@ export function RootLayout() {
               </NavLink>
             ))}
           </nav>
-          <div className="ml-auto">
-            <SettingsDialog />
+
+          {/* 右：设置（安静的齿轮 icon button，不再是孤立的描边按钮） */}
+          <div className="flex items-center gap-1 justify-self-end">
+            <SettingsDialog
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="设置"
+                  className="text-muted-foreground"
+                >
+                  <SettingsIcon />
+                </Button>
+              }
+            />
           </div>
         </div>
       </header>
