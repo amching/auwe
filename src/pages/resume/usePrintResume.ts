@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { exportBaseName } from "./exportName";
 
 /**
  * 简历 PDF 导出：浏览器原生打印（不用 html2canvas / jsPDF，保证文字可选中可搜索）。
@@ -32,8 +33,14 @@ export function usePrintResume() {
       await document.fonts.ready;
     }
 
+    // 用 auwe-nb-<时间戳> 作打印任务标题：Chromium 以此为「另存为 PDF」的默认文件名与 PDF 的
+    // Title 元数据，从而在导出物里留下 auwe 痕迹。打印结束后还原页面标题。
+    const prevTitle = document.title;
+    document.title = exportBaseName();
+
     const cleanup = () => {
       host.innerHTML = "";
+      document.title = prevTitle;
     };
     window.addEventListener("afterprint", cleanup, { once: true });
     window.print();
