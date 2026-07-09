@@ -1,0 +1,145 @@
+/*
+ * 简历纸排版（见 plan/design.md 三节 pt 字阶 + plan/resume-page.md 二节约定）。
+ * 全部作用域在 .resume-paper 下，不外泄。屏幕预览引用本文件；
+ * M3 打印时同一份内核注入 iframe（@page + 分页规则届时加在本文件末尾）。
+ *
+ * 纸永远深墨浅底：用系统黑体栈（不引 webfont，打印瞬时/跨机一致），
+ * pt 字阶（打印语义），颜色全落 --paper-* token。
+ */
+.resume-paper {
+  /*
+   * 自带 Noto Sans SC（在 ResumePreview 里 import）：这是跨平台正常打印的关键。
+   * 系统字体（PingFang/San Francisco）在部分系统无法被浏览器嵌入 PDF（中文变空白），
+   * Linux 更可能压根没有 CJK 字体。自带的开源字体在 macOS/Windows/Linux 都被嵌入，
+   * 保证任何访问者打印出的中文/日文假名/拉丁都一致。后面的系统字体仅用于 Noto 加载前的瞬间兜底。
+   */
+  font-family: "Noto Sans SC", system-ui, "Heiti SC", "Hiragino Sans GB",
+    sans-serif;
+  font-size: 10pt;
+  line-height: 1.55;
+  color: var(--paper-ink);
+}
+
+/* 姓名：H1 → 22pt 居中 */
+.resume-paper h1 {
+  font-size: 22pt;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 2pt;
+}
+
+/* 联系方式行：紧跟 H1 的第一段 → 9pt 居中 muted（相邻选择器，无需 JS） */
+.resume-paper h1 + p {
+  font-size: 9pt;
+  text-align: center;
+  color: var(--paper-ink-muted);
+  margin: 0 0 12pt;
+}
+
+/* 节标题：H2 → 12pt + 下缘细线 */
+.resume-paper h2 {
+  font-size: 12pt;
+  font-weight: 600;
+  margin: 14pt 0 6pt;
+  padding-bottom: 3pt;
+  border-bottom: 0.5pt solid var(--paper-rule);
+}
+
+/* 条目标题：H3 → 10.5pt */
+.resume-paper h3 {
+  font-size: 10.5pt;
+  font-weight: 600;
+  margin: 8pt 0 2pt;
+}
+
+/* H3 的 `|` 拆分：左标题右时间，两端对齐（自定义 h3 组件加 .resume-entry-head） */
+.resume-paper h3.resume-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8pt;
+}
+.resume-paper .resume-entry-time {
+  font-size: 10pt;
+  font-weight: 400;
+  color: var(--paper-ink-muted);
+  white-space: nowrap;
+}
+
+/* 正文 / 列表 */
+.resume-paper p {
+  margin: 0 0 4pt;
+}
+.resume-paper ul,
+.resume-paper ol {
+  margin: 4pt 0;
+  padding-left: 16pt;
+}
+.resume-paper li {
+  margin: 3pt 0;
+}
+.resume-paper li::marker {
+  color: var(--paper-ink-muted);
+}
+.resume-paper a {
+  color: var(--paper-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.resume-paper strong {
+  font-weight: 600;
+}
+.resume-paper hr {
+  border: none;
+  border-top: 0.5pt solid var(--paper-rule);
+  margin: 10pt 0;
+}
+
+/*
+ * 打印规则（仅 paged media 生效，屏幕上被忽略；见 plan/resume-page.md 四节）。
+ * 打印走主文档 portal：#print-root（body 直下）承载简历，打印时隐藏 #root。
+ * 页边距由 @page 控制，纸内不再留 padding。
+ */
+@page {
+  size: A4;
+  margin: 14mm 16mm;
+}
+/* 屏幕上 #print-root 不可见；仅打印时显示 */
+#print-root {
+  display: none;
+}
+@media print {
+  html,
+  body {
+    margin: 0;
+    background: #fff;
+  }
+  /* 只打印简历：隐藏整个 App，显示 body 直下的 #print-root */
+  #root {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+    /*
+     * 隔离加固（补足 portal 相对 iframe 缺的那点隔离）：打印内容只应依赖
+     * .resume-paper 自身样式。这里把打印子树的可继承基线钉死为纸的墨色/背景/字体，
+     * 阻断 App 将来新增的全局字体/颜色/背景规则向打印内容渗透。
+     */
+    color: var(--paper-ink);
+    background: var(--paper);
+    font-family: "Noto Sans SC", system-ui, sans-serif;
+  }
+}
+.resume-paper h2 {
+  break-after: avoid; /* 节标题不孤行 */
+}
+.resume-paper h3 {
+  break-after: avoid; /* 条目标题不孤行 */
+}
+.resume-paper h3 + ul,
+.resume-paper h3 + p {
+  break-before: avoid; /* 条目首行跟住标题 */
+}
+.resume-paper li {
+  break-inside: avoid; /* 单条要点不拦腰截断 */
+}

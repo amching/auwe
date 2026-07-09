@@ -2,13 +2,16 @@ import { Button } from "@/components/ui/button";
 import { useResume } from "@/stores/resume";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { ResumePreview } from "./ResumePreview";
+import { usePrintResume } from "./usePrintResume";
 
-// 里程碑 1：resume store + 内置模板 + 编辑器/预览双栏（纸感基础样式）。
-// AI 面板 (M4)、打印导出 (M3)、重置模板确认 (M5) 为后续里程碑。
+// 里程碑 3：打印导出（iframe + @page + ⌘P 拦截）已接入。
+// AI 面板 (M4)、重置模板确认 (M5) 为后续里程碑。
 export function ResumePage() {
   const markdown = useResume((s) => s.markdown);
   const setMarkdown = useResume((s) => s.setMarkdown);
+  const { print } = usePrintResume();
   const charCount = markdown.replace(/\s/g, "").length;
+  const canExport = markdown.trim().length > 0;
 
   return (
     <section className="flex h-[calc(100svh-3.5rem)] flex-col">
@@ -24,7 +27,14 @@ export function ResumePage() {
         <span className="text-[13px] text-muted-foreground tabular-nums">
           {charCount} 字
         </span>
-        <Button disabled>导出 PDF</Button>
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] text-muted-foreground/70">
+            打印时选「另存为 PDF」，关掉页眉和页脚
+          </span>
+          <Button onClick={print} disabled={!canExport}>
+            导出 PDF
+          </Button>
+        </div>
       </div>
     </section>
   );

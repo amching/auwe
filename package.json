@@ -16,6 +16,7 @@
     "@base-ui/react": "^1.6.0",
     "@codemirror/lang-markdown": "^6.5.0",
     "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource/noto-sans-sc": "^5.2.9",
     "@uiw/react-codemirror": "^4.25.10",
     "ai": "^7.0.16",
     "class-variance-authority": "^0.7.1",
