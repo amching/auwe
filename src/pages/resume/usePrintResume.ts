@@ -1,17 +1,13 @@
 import { useCallback, useEffect } from "react";
 
 /**
- * 铁律 1：浏览器原生打印，禁止 html2canvas / jsPDF。
+ * 简历 PDF 导出：浏览器原生打印（不用 html2canvas / jsPDF，保证文字可选中可搜索）。
  *
- * 打印主文档（portal 方式），不走子 iframe：Chromium 从子 iframe
- * `contentWindow.print()` 打印时，CJK 逐字回退字体不会被正确解析/嵌入，导致中文
- * 全部丢失（拉丁/数字正常）——与 iframe 尺寸无关。主文档打印是顶层路径，字体回退正常。
+ * 把 .resume-paper 克隆进 body 直下的 #print-root，@media print（resume.css 内）
+ * 隐藏 #root、只显示 #print-root，再 window.print()。挂在 body 直下 + 打印时整个隐藏
+ * #root，使打印内容不受工作台祖先 overflow/transform 影响。
  *
- * 做法：把简历 .resume-paper 克隆进 body 下的 #print-root，@media print（在
- * resume.css 里）隐藏 #root、只显示 #print-root，再 window.print()。简历挂在 body 直下、
- * 打印时整个隐藏 #root，绕开工作台祖先 overflow/transform 的裁剪。
- *
- * 两条入口（导出按钮 / ⌘P 拦截）走同一个 print()。
+ * 两条入口——导出按钮与 ⌘P/Ctrl+P 拦截——走同一个 print()。
  */
 export function usePrintResume() {
   const print = useCallback(async () => {

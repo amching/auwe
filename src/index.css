@@ -54,7 +54,7 @@
 }
 
 :root {
-  /* App UI —— 唯一彩色 hue = 灰湖青 ~190°（见 plan/design.md 四节） */
+  /* App UI —— 唯一彩色 hue = 灰湖青 ~190° */
   --background: oklch(0.975 0.004 180); /* #F5F8F7 青倾向暖白，非纯白 */
   --foreground: oklch(0.24 0.012 180); /* #222B28 青灰黑，非纯黑 */
   --card: oklch(1 0 0);

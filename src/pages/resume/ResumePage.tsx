@@ -4,8 +4,7 @@ import { MarkdownEditor } from "./MarkdownEditor";
 import { ResumePreview } from "./ResumePreview";
 import { usePrintResume } from "./usePrintResume";
 
-// 里程碑 3：打印导出（iframe + @page + ⌘P 拦截）已接入。
-// AI 面板 (M4)、重置模板确认 (M5) 为后续里程碑。
+// 简历工作台：左编辑器 / 右预览纸双栏 + 底部工具栏（字数、导出 PDF）。
 export function ResumePage() {
   const markdown = useResume((s) => s.markdown);
   const setMarkdown = useResume((s) => s.setMarkdown);

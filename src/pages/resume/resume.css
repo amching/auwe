@@ -1,17 +1,12 @@
 /*
- * 简历纸排版（见 plan/design.md 三节 pt 字阶 + plan/resume-page.md 二节约定）。
- * 全部作用域在 .resume-paper 下，不外泄。屏幕预览引用本文件；
- * M3 打印时同一份内核注入 iframe（@page + 分页规则届时加在本文件末尾）。
- *
- * 纸永远深墨浅底：用系统黑体栈（不引 webfont，打印瞬时/跨机一致），
- * pt 字阶（打印语义），颜色全落 --paper-* token。
+ * 简历纸排版：全部作用域在 .resume-paper 下，屏幕预览与打印共用。
+ * 纸永远深墨浅底，pt 字阶（打印语义），颜色落 --paper-* token。
  */
 .resume-paper {
   /*
-   * 自带 Noto Sans SC（在 ResumePreview 里 import）：这是跨平台正常打印的关键。
-   * 系统字体（PingFang/San Francisco）在部分系统无法被浏览器嵌入 PDF（中文变空白），
-   * Linux 更可能压根没有 CJK 字体。自带的开源字体在 macOS/Windows/Linux 都被嵌入，
-   * 保证任何访问者打印出的中文/日文假名/拉丁都一致。后面的系统字体仅用于 Noto 加载前的瞬间兜底。
+   * 自带 Noto Sans SC（在 ResumePreview 里 import）：可嵌入 PDF 的开源字体，
+   * 保证跨 macOS/Windows/Linux 打印出的中文/日文假名/拉丁一致（系统 CJK 字体不保证
+   * 存在或可嵌入）。后面的系统字体仅用于 Noto 加载前的瞬间兜底。
    */
   font-family: "Noto Sans SC", system-ui, "Heiti SC", "Hiragino Sans GB",
     sans-serif;
@@ -96,7 +91,7 @@
 }
 
 /*
- * 打印规则（仅 paged media 生效，屏幕上被忽略；见 plan/resume-page.md 四节）。
+ * 打印规则（仅 paged media 生效，屏幕上被忽略）。
  * 打印走主文档 portal：#print-root（body 直下）承载简历，打印时隐藏 #root。
  * 页边距由 @page 控制，纸内不再留 padding。
  */
@@ -121,8 +116,7 @@
   #print-root {
     display: block !important;
     /*
-     * 隔离加固（补足 portal 相对 iframe 缺的那点隔离）：打印内容只应依赖
-     * .resume-paper 自身样式。这里把打印子树的可继承基线钉死为纸的墨色/背景/字体，
+     * 隔离加固：把打印子树的可继承基线钉死为纸的墨色/背景/字体，
      * 阻断 App 将来新增的全局字体/颜色/背景规则向打印内容渗透。
      */
     color: var(--paper-ink);

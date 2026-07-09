@@ -40,9 +40,9 @@ interface ResumePreviewProps {
 }
 
 /**
- * 简历纸：白底黑墨、A4 宽度、带 --paper-shadow 浮起（见 plan/design.md）。
- * 独立于 App 亮暗——纸永远深墨浅底。排版全在 resume.css 的 .resume-paper 下。
- * 必过共享 sanitizeSchema（铁律 2：用户与 LLM 的 Markdown 都不可信）。
+ * 简历纸：白底黑墨、A4 宽度、带 --paper-shadow 浮起，独立于 App 亮暗。
+ * 排版全在 resume.css 的 .resume-paper 下。渲染必过共享 sanitizeSchema
+ * ——用户与 LLM 的 Markdown 都不可信。
  * 屏幕纸内 padding = 打印 @page 边距的等效（14mm 上下 / 16mm 左右）。
  */
 export function ResumePreview({ markdown }: ResumePreviewProps) {
