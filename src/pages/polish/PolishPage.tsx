@@ -41,7 +41,7 @@ export function PolishPage() {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="mx-auto w-full max-w-5xl space-y-4 px-4 py-8">
       <div className="space-y-1">
         <h1 className="font-heading text-2xl font-semibold">文风</h1>
         <p className="text-muted-foreground">

@@ -1,8 +1,18 @@
+import { lazy } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { RootLayout } from "@/components/layout/RootLayout";
-import { PolishPage } from "@/pages/polish/PolishPage";
-import { ResumePage } from "@/pages/resume/ResumePage";
-import { ToolsPage } from "@/pages/tools/ToolsPage";
+
+// 路由级 code-split：CodeMirror 只落进 Resume chunk，Polish/Tools 不再拖它。
+// Suspense 边界在 RootLayout 的 <Outlet> 外统一兜底。
+const ResumePage = lazy(() =>
+  import("@/pages/resume/ResumePage").then((m) => ({ default: m.ResumePage })),
+);
+const PolishPage = lazy(() =>
+  import("@/pages/polish/PolishPage").then((m) => ({ default: m.PolishPage })),
+);
+const ToolsPage = lazy(() =>
+  import("@/pages/tools/ToolsPage").then((m) => ({ default: m.ToolsPage })),
+);
 
 const router = createBrowserRouter([
   {

@@ -1,6 +1,15 @@
+import { Suspense } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { cn } from "@/lib/utils";
+
+function PageFallback() {
+  return (
+    <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+      加载中…
+    </div>
+  );
+}
 
 const NAV = [
   { to: "/", label: "简历", end: true },
@@ -12,7 +21,7 @@ export function RootLayout() {
   return (
     <div className="min-h-svh flex flex-col">
       <header className="border-b">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4">
+        <div className="flex h-14 items-center gap-6 px-4">
           <span className="font-heading text-lg font-semibold">auwe</span>
           <nav className="flex items-center gap-1">
             {NAV.map((item) => (
@@ -38,8 +47,10 @@ export function RootLayout() {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        <Outlet />
+      <main className="flex flex-1 flex-col">
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
