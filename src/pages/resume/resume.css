@@ -10,8 +10,21 @@
    */
   font-family: "Noto Sans SC", system-ui, "Heiti SC", "Hiragino Sans GB",
     sans-serif;
+  /*
+   * 字号是简历排版的硬约束（正文 10–11.5pt / 节标题 12–14pt / 姓名 18–24pt），
+   * 一旦设定不随任何系数变化——「智能一页」绝不缩字。
+   *
+   * --resume-spacing：间距压缩系数（默认 1，下限见 useAutoFit）。只驱动纵向留白，
+   * 不碰字号：line-height 与所有块的上下 margin / padding / gap 随它收紧，
+   * 让内容在字号不变的前提下压进更少的页。由 useAutoFit 写成 inline 变量，
+   * 打印克隆 outerHTML 时随之带走 → 预览与 PDF 的间距一致。
+   *
+   * line-height 单独用插值（收紧但有下限），因为直接乘系数会把行距压到 <1：
+   * spacing 1 → 1.62，spacing 0 → 1.35。
+   */
+  --resume-spacing: 1;
   font-size: 10pt;
-  line-height: 1.62;
+  line-height: calc(1.35 + 0.27 * var(--resume-spacing));
   color: var(--paper-ink);
 }
 
@@ -21,7 +34,7 @@
   font-weight: 600;
   letter-spacing: -0.01em;
   text-align: center;
-  margin: 0 0 2pt;
+  margin: 0 0 calc(2pt * var(--resume-spacing));
 }
 
 /* 联系方式行：紧跟 H1 的第一段 → 9pt 居中 muted（相邻选择器，无需 JS） */
@@ -29,15 +42,15 @@
   font-size: 9pt;
   text-align: center;
   color: var(--paper-ink-muted);
-  margin: 0 0 12pt;
+  margin: 0 0 calc(12pt * var(--resume-spacing));
 }
 
 /* 节标题：H2 → 13pt + 下缘细线（与 10.5pt 的条目标题拉开层级） */
 .resume-paper h2 {
   font-size: 13pt;
   font-weight: 600;
-  margin: 16pt 0 6pt;
-  padding-bottom: 3pt;
+  margin: calc(16pt * var(--resume-spacing)) 0 calc(6pt * var(--resume-spacing));
+  padding-bottom: calc(3pt * var(--resume-spacing));
   border-bottom: 0.5pt solid var(--paper-rule);
 }
 
@@ -45,7 +58,7 @@
 .resume-paper h3 {
   font-size: 10.5pt;
   font-weight: 600;
-  margin: 8pt 0 2pt;
+  margin: calc(8pt * var(--resume-spacing)) 0 calc(2pt * var(--resume-spacing));
 }
 
 /* H3 的 `|` 拆分：左标题右时间，两端对齐（自定义 h3 组件加 .resume-entry-head） */
@@ -64,15 +77,15 @@
 
 /* 正文 / 列表 */
 .resume-paper p {
-  margin: 0 0 4pt;
+  margin: 0 0 calc(4pt * var(--resume-spacing));
 }
 .resume-paper ul,
 .resume-paper ol {
-  margin: 4pt 0;
+  margin: calc(4pt * var(--resume-spacing)) 0;
   padding-left: 16pt;
 }
 .resume-paper li {
-  margin: 3pt 0;
+  margin: calc(3pt * var(--resume-spacing)) 0;
 }
 .resume-paper li::marker {
   color: var(--paper-ink-muted);
@@ -88,7 +101,38 @@
 .resume-paper hr {
   border: none;
   border-top: 0.5pt solid var(--paper-rule);
-  margin: 10pt 0;
+  margin: calc(10pt * var(--resume-spacing)) 0;
+}
+
+/*
+ * 预览页框（真分页所见即所得）：每个 .resume-page 是一张 A4 纸，内边距 = @page 页边距，
+ * 内部 .resume-paper 内容宽自然落到 178mm，与隐藏源 / 打印一致。整栈由 JS transform: scale
+ * 缩放适配面板宽（缩放不改折行）。只作用于屏幕；打印走 #print-root 的连续源，与此无关。
+ */
+.resume-pages-wrap {
+  position: relative;
+  width: 100%;
+}
+.resume-pages-scaler {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+.resume-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.resume-page {
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 16mm;
+  background: var(--paper);
+  border-radius: var(--radius-paper);
+  box-shadow: var(--paper-shadow);
 }
 
 /*
@@ -110,8 +154,13 @@
     margin: 0;
     background: #fff;
   }
-  /* 只打印简历：隐藏整个 App，显示 body 直下的 #print-root */
-  #root {
+  /*
+   * 只打印简历：隐藏 body 下除 #print-root 外的一切。
+   * 不能只隐藏 #root——shadcn/Base UI 的下拉菜单/弹层是挂在 body 直下的 portal（#root 的兄弟），
+   * 若只隐藏 #root，打开过的下拉 portal 会残留进打印页、把内容撑到比 A4 宽，
+   * 触发 Edge「适合可打印区域」把整页等比缩小（预览 1.7 页却导出成 1.1 页的元凶）。
+   */
+  body > *:not(#print-root) {
     display: none !important;
   }
   #print-root {

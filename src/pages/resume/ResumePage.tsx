@@ -1,5 +1,10 @@
-import { ChevronDownIcon, EyeIcon, FileTextIcon } from "lucide-react";
-import { useState } from "react";
+import {
+  ChevronDownIcon,
+  EyeIcon,
+  FileTextIcon,
+  SparklesIcon,
+} from "lucide-react";
+import { useCallback, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useResume } from "@/stores/resume";
 import { MarkdownEditor } from "./MarkdownEditor";
-import { ResumePreview } from "./ResumePreview";
+import { type ResumeLayoutInfo, ResumePreview } from "./ResumePreview";
 import { usePrintResume } from "./usePrintResume";
 
 // 下载 Markdown 源文件（客户端生成 Blob，不经服务器）。
@@ -45,6 +50,13 @@ export function ResumePage() {
 
   const [tab, setTab] = useState<"edit" | "preview">("edit");
   const [resetOpen, setResetOpen] = useState(false);
+  const [autoFit, setAutoFit] = useState(false);
+  // 预览分页后回报的页数/溢出（所见即所得）。ResumePreview 每次重排后经 onLayout 更新。
+  const [layout, setLayout] = useState<ResumeLayoutInfo>({
+    pageCount: 1,
+    overflow: false,
+  });
+  const onLayout = useCallback((info: ResumeLayoutInfo) => setLayout(info), []);
 
   const charCount = markdown.replace(/\s/g, "").length;
   // 章节数：markdown 里行首 `## ` 的数量（H2 = 简历章节）。纯派生只读，不改任何逻辑。
@@ -93,10 +105,20 @@ export function ResumePage() {
             tab === "preview" ? "flex flex-1" : "hidden",
           )}
         >
-          <PreviewStageHeader />
-          <div className="scroll-subtle min-h-0 flex-1 overflow-auto px-6 py-10 lg:px-12 lg:py-16 xl:px-16">
+          <PreviewStageHeader
+            autoFit={autoFit}
+            onToggleAutoFit={() => setAutoFit((v) => !v)}
+            canAutoFit={hasContent}
+            pageCount={layout.pageCount}
+            overflow={layout.overflow}
+          />
+          <div className="scroll-subtle min-h-0 flex-1 overflow-auto px-4 py-5 lg:px-6 lg:py-6">
             {hasContent ? (
-              <ResumePreview markdown={markdown} />
+              <ResumePreview
+                markdown={markdown}
+                autoFit={autoFit}
+                onLayout={onLayout}
+              />
             ) : (
               <EmptyState onRestore={resetToTemplate} />
             )}
@@ -202,9 +224,23 @@ function EditorPanelHeader() {
   );
 }
 
-// Preview Stage 顶部轻量工具条：预览标识 + A4 + 模板名 + 缩放状态。
-// 纯展示：不引入缩放逻辑，"100%" 为当前自然尺寸的状态标签，非可点控件。
-function PreviewStageHeader() {
+interface PreviewStageHeaderProps {
+  autoFit: boolean;
+  onToggleAutoFit: () => void;
+  canAutoFit: boolean;
+  pageCount: number;
+  overflow: boolean;
+}
+
+// Preview Stage 顶部轻量工具条：预览标识 + A4 + 模板名 + 智能一页开关 + 真实页数。
+// “智能一页”开启后只收紧间距（不改字号）尽量压进一页；右侧页数由真分页给出，所见即所得。
+function PreviewStageHeader({
+  autoFit,
+  onToggleAutoFit,
+  canAutoFit,
+  pageCount,
+  overflow,
+}: PreviewStageHeaderProps) {
   return (
     <div className="flex h-9 shrink-0 items-center gap-2.5 border-b bg-card px-3">
       <EyeIcon aria-hidden className="size-3.5 shrink-0 text-faint" />
@@ -213,13 +249,33 @@ function PreviewStageHeader() {
         A4
       </Badge>
       <span className="text-ui-xs text-faint">Clean</span>
-      <div className="ml-auto flex items-center gap-2 text-ui-xs text-faint">
-        <span className="flex items-center gap-1.5">
-          <span aria-hidden className="size-1.5 rounded-full bg-success/80" />
-          已同步
+
+      {/* 开了智能一页但压到间距下限仍超一页：提示精简（字号不动，靠间距压不下更多） */}
+      {autoFit && overflow && (
+        <span className="text-ui-xs font-medium text-warning">
+          内容较多，建议精简
         </span>
+      )}
+
+      <div className="ml-auto flex items-center gap-2 text-ui-xs text-faint">
+        <button
+          type="button"
+          onClick={onToggleAutoFit}
+          disabled={!canAutoFit}
+          aria-pressed={autoFit}
+          title="收紧行距与段距（不改字号），尽量把内容压进一页 A4"
+          className={cn(
+            "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 font-medium transition-colors disabled:opacity-40",
+            autoFit
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <SparklesIcon aria-hidden className="size-3" />
+          智能一页
+        </button>
         <span aria-hidden className="h-3 w-px bg-border" />
-        <span className="tabular-nums">100%</span>
+        <span className="tabular-nums">{pageCount} 页</span>
       </div>
     </div>
   );

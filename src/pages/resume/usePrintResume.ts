@@ -3,15 +3,19 @@ import { useCallback, useEffect } from "react";
 /**
  * 简历 PDF 导出：浏览器原生打印（不用 html2canvas / jsPDF，保证文字可选中可搜索）。
  *
- * 把 .resume-paper 克隆进 body 直下的 #print-root，@media print（resume.css 内）
- * 隐藏 #root、只显示 #print-root，再 window.print()。挂在 body 直下 + 打印时整个隐藏
- * #root，使打印内容不受工作台祖先 overflow/transform 影响。
+ * 克隆的是隐藏的「连续源」#resume-print-source（而非可见的分页页框）——让浏览器按 @page
+ * 原生分页，与预览的自研分页基于同一份 CSS/内容宽/--resume-spacing，故基本一致。它带的
+ * inline --resume-spacing 随 outerHTML 一起进 #print-root，打印间距与预览一致。
+ *
+ * 把它克隆进 body 直下的 #print-root，@media print（resume.css 内）隐藏 #root、只显示
+ * #print-root，再 window.print()。挂在 body 直下 + 打印时整个隐藏 #root，使打印内容不受
+ * 工作台祖先 overflow/transform 影响。
  *
  * 两条入口——导出按钮与 ⌘P/Ctrl+P 拦截——走同一个 print()。
  */
 export function usePrintResume() {
   const print = useCallback(async () => {
-    const paper = document.querySelector<HTMLElement>(".resume-paper");
+    const paper = document.getElementById("resume-print-source");
     if (!paper) return;
 
     let host = document.getElementById("print-root");
