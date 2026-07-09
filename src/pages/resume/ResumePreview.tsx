@@ -81,13 +81,29 @@ export interface ResumeLayoutInfo {
   pageCount: number;
   /** 开了智能一页但仍压不进一页：内容太多，建议精简。 */
   overflow: boolean;
+  /** 实际内容字数：从渲染后的可见文本计，已排除注释 / Markdown 语法 / 链接 URL。 */
+  charCount: number;
+  /** 章节数 = 渲染出的 H2 个数。 */
+  sectionCount: number;
+}
+
+/**
+ * 简历实际字数：中英混排按 Word「字数统计」口径——CJK 逐字计 1，英文/数字按「词」（连续
+ * 字母数字串）计 1，标点与空白不计。输入应是渲染后的可见文本（textContent），
+ * 因此天然不含 HTML 注释、`#`/`-`/`**`/`|` 等语法符号、以及链接的 URL。
+ */
+function countContent(text: string): number {
+  // 一-鿿 汉字 / 㐀-䶿 扩展A / ぀-ヿ 日文假名
+  const cjk = (text.match(/[㐀-䶿一-鿿぀-ヿ]/g) ?? []).length;
+  const words = (text.match(/[A-Za-z0-9]+/g) ?? []).length;
+  return cjk + words;
 }
 
 interface ResumePreviewProps {
   markdown: string;
   /** 智能一页开关：开 → 先收紧间距、再在标准区间内缩字号，尽量压进一页。 */
   autoFit: boolean;
-  /** 每次重新分页后回报页数/溢出，供工作台头部显示。 */
+  /** 每次重新分页后回报页数/溢出/字数/章节数（均基于渲染后的实际内容），供工作台显示。 */
   onLayout?: (info: ResumeLayoutInfo) => void;
 }
 
@@ -171,6 +187,8 @@ export function ResumePreview({
     onLayout?.({
       pageCount: pages.length,
       overflow: autoFit && pages.length > 1,
+      charCount: countContent(source.textContent ?? ""),
+      sectionCount: source.querySelectorAll("h2").length,
     });
   }, [autoFit, chooseFit, applyZoom, onLayout]);
 

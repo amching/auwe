@@ -2,7 +2,7 @@
 // 顶部注释块用 HTML 注释，会被 sanitize/渲染吞掉——只在编辑器里教用户，不出现在预览与导出的 PDF。
 export const RESUME_TEMPLATE = `<!--
   约定优于语法 —— 你只写朴素的 Markdown，版式由「结构」自动推断，不必记任何专有标记。
-  四条约定（都是标准 GFM，写错也能平滑降级、不会崩）：
+  四条约定（都是标准 GFM，写错也能平滑降级）：
 
     # 姓名                     → 居中大标题，整页的视觉锚点
     紧跟 # 的第一段             → 联系方式行，居中、次要色（邮箱 · 电话 · 城市 · 链接）
@@ -15,7 +15,7 @@ export const RESUME_TEMPLATE = `<!--
 
 # 石青
 
-[shiqing@example.com](mailto:shiqing@example.com) · 138-8888-8888 · 上海 · [github.com/shiqing](https://github.com/shiqing)
+[demo@example.com](mailto:demo@example.com) · 138-8888-8888 · 上海 · [github.com/amching](https://github.com/amching)
 
 ## 专业技能
 
