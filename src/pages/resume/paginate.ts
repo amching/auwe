@@ -114,13 +114,18 @@ export function paginate(
 }
 
 /**
- * 把一页的单元克隆重建成 .resume-paper 内容（含正确 --resume-spacing）。
+ * 把一页的单元克隆重建成 .resume-paper 内容（含正确 --resume-spacing / --resume-type）。
  * 连续同一列表的 li 重新包回一个 ul/ol（跨页时各页各留自己的子集）。
  */
-export function buildPaper(page: Unit[], spacing: number): HTMLElement {
+export function buildPaper(
+  page: Unit[],
+  spacing: number,
+  type: number,
+): HTMLElement {
   const paper = document.createElement("div");
   paper.className = "resume-paper";
   paper.style.setProperty("--resume-spacing", String(spacing));
+  paper.style.setProperty("--resume-type", String(type));
 
   let i = 0;
   while (i < page.length) {

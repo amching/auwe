@@ -263,7 +263,7 @@ function PreviewStageHeader({
           onClick={onToggleAutoFit}
           disabled={!canAutoFit}
           aria-pressed={autoFit}
-          title="收紧行距与段距（不改字号），尽量把内容压进一页 A4"
+          title="先收紧行距段距、再在标准区间内微调字号，尽量把内容压进一页 A4"
           className={cn(
             "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 font-medium transition-colors disabled:opacity-40",
             autoFit

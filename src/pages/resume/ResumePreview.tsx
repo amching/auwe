@@ -24,13 +24,31 @@ import {
 } from "./paginate";
 import "./resume.css";
 
-/** 间距压缩下限：低于此值行距/留白过挤。字号永远不动（见 resume.css）。 */
+/** 间距压缩下限：低于此值行距/留白过挤。 */
 const SPACING_FLOOR = 0.55;
 /**
  * 智能一页判定的安全余量：只有内容落进「整页高 − 4mm」才算压进一页。
  * 留这点头寸给浏览器原生打印的舍入差，保证预览的「1 页」在导出 PDF 时也是 1 页。
  */
 const FIT_TARGET_PX = PAGE_CONTENT_PX - 4 * MM_TO_PX;
+
+/**
+ * 「智能一页」压缩路径：单调标量 fit ∈ [0,1]，0=舒适（默认），1=最紧凑。
+ * 先收紧间距、再缩字号（都在标准区间内），符合“先压留白再动字”的排版直觉：
+ *   fit 0→SPLIT：--resume-spacing 从 1 收到 SPACING_FLOOR，字号档位保持舒适；
+ *   fit SPLIT→1：间距已到底，--resume-type 从 1（舒适）降到 0（紧凑）。
+ * 页高随 fit 单调不增，故可二分求“能压进一页的最小 fit”（即最舒适的可行解）。
+ */
+const FIT_SPLIT = 0.6;
+function varsForFit(fit: number): { spacing: number; type: number } {
+  if (fit <= FIT_SPLIT) {
+    return { spacing: 1 - (1 - SPACING_FLOOR) * (fit / FIT_SPLIT), type: 1 };
+  }
+  return {
+    spacing: SPACING_FLOOR,
+    type: 1 - (fit - FIT_SPLIT) / (1 - FIT_SPLIT),
+  };
+}
 
 /**
  * 条目标题 H3：以最后一个 `|` 拆成「左标题 / 右时间」两端对齐。
@@ -67,7 +85,7 @@ export interface ResumeLayoutInfo {
 
 interface ResumePreviewProps {
   markdown: string;
-  /** 智能一页开关：开 → 收紧间距（不改字号）尽量压进一页。 */
+  /** 智能一页开关：开 → 先收紧间距、再在标准区间内缩字号，尽量压进一页。 */
   autoFit: boolean;
   /** 每次重新分页后回报页数/溢出，供工作台头部显示。 */
   onLayout?: (info: ResumeLayoutInfo) => void;
@@ -81,8 +99,8 @@ interface ResumePreviewProps {
  * - 可见区是 N 个 A4 页框，用 paginate/buildPaper 把源节点克隆分配进去 → 与打印分页基本一致，
  *   末页留白也如实呈现。
  * - 整个页栈用 transform: scale 适配面板宽度；内容始终按真实 178mm 折行，故预览折行=打印折行。
- * - 智能一页：在 [FLOOR,1] 内二分收紧 --resume-spacing，找能让页数=1 的最大值（最少压缩）；
- *   压不进则停在下限并回报 overflow。全程不改字号。
+ * - 智能一页：沿 fit 路径（先收紧间距、再在标准区间内缩字号，见 varsForFit）二分求能压进一页
+ *   的最舒适一组；压到最紧凑仍超一页则回报 overflow，交给头部提示精简。
  */
 export function ResumePreview({
   markdown,
@@ -106,24 +124,26 @@ export function ResumePreview({
     wrap.style.height = `${host.scrollHeight * z}px`;
   }, []);
 
-  // 选定间距系数：智能一页时二分求「能压进一页的最大 spacing」，否则 1。只读几何、不改字号。
-  const chooseSpacing = useCallback(
+  // 选定压缩档位 fit：智能一页时二分求「能压进一页的最小 fit」（最舒适的可行解），否则 0（舒适默认）。
+  // 只读几何。判定用带安全余量的目标高度（FIT_TARGET_PX），避免卡边导致原生打印多翻一页。
+  const chooseFit = useCallback(
     (source: HTMLElement): number => {
-      // 判定用带安全余量的目标高度（见 FIT_TARGET_PX），避免卡边导致打印多翻一页。
-      const fitsOnePage = (s: number) => {
-        source.style.setProperty("--resume-spacing", String(s));
+      const fitsOnePage = (fit: number) => {
+        const { spacing, type } = varsForFit(fit);
+        source.style.setProperty("--resume-spacing", String(spacing));
+        source.style.setProperty("--resume-type", String(type));
         return paginate(source, FIT_TARGET_PX).length <= 1;
       };
-      if (!autoFit || fitsOnePage(1)) return 1;
-      if (!fitsOnePage(SPACING_FLOOR)) return SPACING_FLOOR; // 压到底仍不止一页
-      let lo = SPACING_FLOOR; // 已知能进一页
-      let hi = 1; // 已知进不了一页
-      for (let i = 0; i < 12; i++) {
+      if (!autoFit || fitsOnePage(0)) return 0; // 舒适档已能一页（或未开）
+      if (!fitsOnePage(1)) return 1; // 压到最紧凑仍不止一页
+      let lo = 0; // 已知进不了一页
+      let hi = 1; // 已知能进一页
+      for (let i = 0; i < 16; i++) {
         const mid = (lo + hi) / 2;
-        if (fitsOnePage(mid)) lo = mid;
-        else hi = mid;
+        if (fitsOnePage(mid)) hi = mid;
+        else lo = mid;
       }
-      return lo;
+      return hi; // 最小的可行 fit = 最舒适
     },
     [autoFit],
   );
@@ -134,15 +154,16 @@ export function ResumePreview({
     const host = hostRef.current;
     if (!source || !host) return;
 
-    const spacing = chooseSpacing(source);
+    const { spacing, type } = varsForFit(chooseFit(source));
     source.style.setProperty("--resume-spacing", String(spacing));
+    source.style.setProperty("--resume-type", String(type));
     const pages = paginate(source);
 
     host.replaceChildren();
     for (const page of pages) {
       const frame = document.createElement("div");
       frame.className = "resume-page";
-      frame.appendChild(buildPaper(page, spacing));
+      frame.appendChild(buildPaper(page, spacing, type));
       host.appendChild(frame);
     }
 
@@ -151,7 +172,7 @@ export function ResumePreview({
       pageCount: pages.length,
       overflow: autoFit && pages.length > 1,
     });
-  }, [autoFit, chooseSpacing, applyZoom, onLayout]);
+  }, [autoFit, chooseFit, applyZoom, onLayout]);
 
   // markdown 变化经 react-markdown 改源 DOM 后需重排（它不被 relayout 直接读取，仅作触发器）。
   // biome-ignore lint/correctness/useExhaustiveDependencies: markdown 是重排触发器而非直接依赖
@@ -183,7 +204,7 @@ export function ResumePreview({
     <>
       {/*
        * 隐藏连续源（唯一事实源）：屏外定位但仍参与布局以供测量；固定内容宽 178mm。
-       * #resume-print-source 供 usePrintResume 克隆打印；--resume-spacing 由 relayout 写在其上。
+       * #resume-print-source 供 usePrintResume 克隆打印；--resume-spacing / --resume-type 由 relayout 写在其上。
        */}
       <div
         aria-hidden

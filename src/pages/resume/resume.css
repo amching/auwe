@@ -11,52 +11,52 @@
   font-family: "Noto Sans SC", system-ui, "Heiti SC", "Hiragino Sans GB",
     sans-serif;
   /*
-   * 字号是简历排版的硬约束（正文 10–11.5pt / 节标题 12–14pt / 姓名 18–24pt），
-   * 一旦设定不随任何系数变化——「智能一页」绝不缩字。
+   * 两个压缩系数（默认都在「舒适」端；「智能一页」按 舒适→紧凑 搜索能压进一页的最合适一组）：
    *
-   * --resume-spacing：间距压缩系数（默认 1，下限见 useAutoFit）。只驱动纵向留白，
-   * 不碰字号：line-height 与所有块的上下 margin / padding / gap 随它收紧，
-   * 让内容在字号不变的前提下压进更少的页。由 useAutoFit 写成 inline 变量，
-   * 打印克隆 outerHTML 时随之带走 → 预览与 PDF 的间距一致。
+   * --resume-type ∈ [0,1]：字号档位。1=舒适（默认），0=紧凑。每个层级在**标准区间内**
+   * 于两端之间插值，比例保持不变，绝不越出可读区间：
+   *   正文 10→11pt / 条目标题 10.5→11.5pt / 节标题 12→13.5pt / 姓名 20→23pt / 次要信息 9→10pt。
+   * --resume-spacing ∈ [floor,1]：间距系数。只驱动纵向留白（line-height 与各 margin/padding/gap）。
    *
-   * line-height 单独用插值（收紧但有下限），因为直接乘系数会把行距压到 <1：
-   * spacing 1 → 1.62，spacing 0 → 1.35。
+   * 二者由 ResumePreview 写成 .resume-paper 的 inline 变量；打印克隆 outerHTML 时随之带走
+   * → 预览与 PDF 的字号/间距一致。line-height 用插值（直接乘会压到 <1）：spacing 1→1.62，0→1.35。
    */
+  --resume-type: 1;
   --resume-spacing: 1;
-  font-size: 10pt;
+  font-size: calc(10pt + 1pt * var(--resume-type));
   line-height: calc(1.35 + 0.27 * var(--resume-spacing));
   color: var(--paper-ink);
 }
 
-/* 姓名：H1 → 22pt 居中 */
+/* 姓名：H1 → 20–23pt 居中 */
 .resume-paper h1 {
-  font-size: 22pt;
+  font-size: calc(20pt + 3pt * var(--resume-type));
   font-weight: 600;
   letter-spacing: -0.01em;
   text-align: center;
   margin: 0 0 calc(2pt * var(--resume-spacing));
 }
 
-/* 联系方式行：紧跟 H1 的第一段 → 9pt 居中 muted（相邻选择器，无需 JS） */
+/* 联系方式行：紧跟 H1 的第一段 → 9–10pt 居中 muted（相邻选择器，无需 JS） */
 .resume-paper h1 + p {
-  font-size: 9pt;
+  font-size: calc(9pt + 1pt * var(--resume-type));
   text-align: center;
   color: var(--paper-ink-muted);
   margin: 0 0 calc(12pt * var(--resume-spacing));
 }
 
-/* 节标题：H2 → 13pt + 下缘细线（与 10.5pt 的条目标题拉开层级） */
+/* 节标题：H2 → 12–13.5pt + 下缘细线（与条目标题拉开层级） */
 .resume-paper h2 {
-  font-size: 13pt;
+  font-size: calc(12pt + 1.5pt * var(--resume-type));
   font-weight: 600;
   margin: calc(16pt * var(--resume-spacing)) 0 calc(6pt * var(--resume-spacing));
   padding-bottom: calc(3pt * var(--resume-spacing));
   border-bottom: 0.5pt solid var(--paper-rule);
 }
 
-/* 条目标题：H3 → 10.5pt */
+/* 条目标题：H3 → 10.5–11.5pt */
 .resume-paper h3 {
-  font-size: 10.5pt;
+  font-size: calc(10.5pt + 1pt * var(--resume-type));
   font-weight: 600;
   margin: calc(8pt * var(--resume-spacing)) 0 calc(2pt * var(--resume-spacing));
 }
@@ -69,7 +69,7 @@
   gap: 8pt;
 }
 .resume-paper .resume-entry-time {
-  font-size: 10pt;
+  font-size: calc(9pt + 1pt * var(--resume-type));
   font-weight: 400;
   color: var(--paper-ink-muted);
   white-space: nowrap;
