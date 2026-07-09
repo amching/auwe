@@ -237,3 +237,42 @@
   background: color-mix(in oklch, var(--foreground) 26%, transparent);
   background-clip: padding-box;
 }
+
+/*
+ * 副标题「站」⇄「栈」双关：同位叠放两字，缓慢交叉溶解（配轻微模糊做「化开→凝成」的 morph 感）。
+ * 「工具站」（工具集散地）与「工具栈」（technical stack）来回切换。占位字撑宽避免抖动；尊重 reduce-motion。
+ */
+.morph-glyph {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+}
+.morph-glyph > .morph-slot {
+  visibility: hidden;
+}
+.morph-glyph > .morph-a,
+.morph-glyph > .morph-b {
+  position: absolute;
+  inset: 0;
+  will-change: opacity, filter;
+}
+.morph-glyph > .morph-a {
+  animation: glyph-a 12s ease-in-out infinite;
+}
+.morph-glyph > .morph-b {
+  animation: glyph-b 12s ease-in-out infinite;
+}
+@keyframes glyph-a {
+  0%, 35% { opacity: 1; filter: blur(0); }
+  50%, 85% { opacity: 0; filter: blur(2.5px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+@keyframes glyph-b {
+  0%, 35% { opacity: 0; filter: blur(2.5px); }
+  50%, 85% { opacity: 1; filter: blur(0); }
+  100% { opacity: 0; filter: blur(2.5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .morph-glyph > .morph-a { animation: none; opacity: 1; filter: none; }
+  .morph-glyph > .morph-b { animation: none; opacity: 0; }
+}

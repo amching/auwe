@@ -34,8 +34,17 @@ export function RootLayout() {
               aria-hidden
               className="h-3.5 w-px shrink-0 bg-border-strong"
             />
-            <span className="truncate text-ui-xs font-medium tracking-wide text-faint">
-              职场工具站
+            {/* 副标题末字在「站」↔「栈」间缓慢交叉溶解（工具站 / 工具栈 双关） */}
+            <span
+              aria-label="职场工具站"
+              className="truncate text-ui-xs font-medium tracking-wide text-faint"
+            >
+              <span aria-hidden>职场工具</span>
+              <span aria-hidden className="morph-glyph">
+                <span className="morph-slot">站</span>
+                <span className="morph-a">站</span>
+                <span className="morph-b">栈</span>
+              </span>
             </span>
           </div>
 
