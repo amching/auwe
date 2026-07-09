@@ -137,7 +137,7 @@
 
 /*
  * 打印规则（仅 paged media 生效，屏幕上被忽略）。
- * 打印走主文档 portal：#print-root（body 直下）承载简历，打印时隐藏 #root。
+ * 打印走主文档 portal：#print-root（body 直下）承载连续源简历，打印时隐藏 body 下其余节点。
  * 页边距由 @page 控制，纸内不再留 padding。
  */
 @page {

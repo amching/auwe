@@ -70,7 +70,7 @@ function collectUnits(source: HTMLElement): Unit[] {
 }
 
 /**
- * 读取源当前布局（即当前 --resume-spacing 下）切页，返回每页的单元序列。
+ * 读取源当前布局（即当前 --resume-spacing / --resume-type 下）切页，返回每页的单元序列。
  * 只读几何，不修改源。页数 = 返回数组长度。
  *
  * pageHeightPx 默认整页内容高（269mm）；智能一页判定时传入略小的值留出安全余量，

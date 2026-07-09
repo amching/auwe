@@ -233,7 +233,7 @@ interface PreviewStageHeaderProps {
 }
 
 // Preview Stage 顶部轻量工具条：预览标识 + A4 + 模板名 + 智能一页开关 + 真实页数。
-// “智能一页”开启后只收紧间距（不改字号）尽量压进一页；右侧页数由真分页给出，所见即所得。
+// “智能一页”开启后先收紧间距、再在标准区间内微调字号尽量压进一页；右侧页数由真分页给出，所见即所得。
 function PreviewStageHeader({
   autoFit,
   onToggleAutoFit,

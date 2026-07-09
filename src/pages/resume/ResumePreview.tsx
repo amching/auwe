@@ -188,7 +188,6 @@ export function ResumePreview({
     return () => {
       cancelled = true;
     };
-    // markdown 变化经 react-markdown 改动源 DOM 后需重新分页（源节点非直接依赖，靠它触发）。
   }, [relayout, markdown]);
 
   // 面板宽度变化 → 只重算缩放，不必重新分页。

@@ -48,7 +48,14 @@ src/
     layout/SettingsDialog.tsx    # endpoint / apiKey / model 表单 → settings store
     ui/                          # shadcn 组件（Base UI 底座，用 render 而非 asChild）
   pages/
-    resume/ResumePage.tsx        # 简历（占位，待做编辑器 + 打印导出）
+    resume/
+      ResumePage.tsx             # 简历工作台：左编辑器 / 右分页预览 + 底部工具栏
+      MarkdownEditor.tsx         # CodeMirror 6 编辑器
+      ResumePreview.tsx          # 隐藏连续源(唯一事实源) + 真分页 A4 页框 + 缩放适配 + 智能一页
+      paginate.ts                # 分页引擎：按页高切页、克隆源节点重建各页框
+      usePrintResume.ts          # 原生打印导出 PDF：克隆连续源进 #print-root → window.print()
+      resume.css                 # 简历纸排版(.resume-paper) + 页框 + @page/@media print
+      resumeTemplate.ts          # 内置示例模板
     polish/PolishPage.tsx        # 文风（已跑通的流式润色竖切片）
     tools/ToolsPage.tsx          # 工具（占位）
   lib/
@@ -57,7 +64,9 @@ src/
     markdown/sanitize.ts         # 共享 rehype-sanitize schema
     markdown/MarkdownPreview.tsx # 唯一的 Markdown 渲染入口（已内置 sanitize）
     utils.ts                     # shadcn 的 cn()
-  stores/settings.ts             # zustand + persist → localStorage（endpoint/apiKey/model）
+  stores/
+    settings.ts                  # zustand + persist → localStorage（endpoint/apiKey/model）
+    resume.ts                    # zustand + persist → localStorage（简历 markdown 源）
   test/setup.ts                  # vitest + jest-dom
 ```
 
