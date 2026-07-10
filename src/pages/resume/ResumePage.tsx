@@ -1,4 +1,5 @@
 import {
+  CheckIcon,
   ChevronDownIcon,
   EyeIcon,
   FileTextIcon,
@@ -29,11 +30,8 @@ import { useResume } from "@/stores/resume";
 import { exportBaseName } from "./exportName";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { type ResumeLayoutInfo, ResumePreview } from "./ResumePreview";
-import { DEFAULT_RESUME_TEMPLATE, getResumeTemplate } from "./templates";
+import { getResumeTemplate, RESUME_TEMPLATES } from "./templates";
 import { usePrintResume } from "./usePrintResume";
-
-// 当前视觉模板（尚无切换 UI，恒为默认；将来切换时改为来自状态）。
-const template = getResumeTemplate(DEFAULT_RESUME_TEMPLATE);
 
 // 去掉 HTML 注释（如内置模板的教学注释）。它不进预览/PDF，判断有无内容与导出的 Markdown 都应与之一致。
 function stripHtmlComments(md: string): string {
@@ -60,6 +58,9 @@ export function ResumePage() {
   const markdown = useResume((s) => s.markdown);
   const setMarkdown = useResume((s) => s.setMarkdown);
   const resetToSample = useResume((s) => s.resetToSample);
+  const templateId = useResume((s) => s.template);
+  const setTemplate = useResume((s) => s.setTemplate);
+  const template = getResumeTemplate(templateId);
   const { print } = usePrintResume();
 
   const [tab, setTab] = useState<"edit" | "preview">("edit");
@@ -129,12 +130,14 @@ export function ResumePage() {
             canAutoFit={hasContent}
             pageCount={layout.pageCount}
             overflow={layout.overflow}
+            templateLabel={template.label}
           />
           <div className="scroll-subtle min-h-0 flex-1 overflow-auto px-4 py-5 lg:px-6 lg:py-6">
             {hasContent ? (
               <ResumePreview
                 markdown={markdown}
                 autoFit={autoFit}
+                template={templateId}
                 onLayout={onLayout}
               />
             ) : (
@@ -161,13 +164,39 @@ export function ResumePage() {
           </span>
         </div>
 
-        {/* 中：上下文 —— 模式 · 模板 */}
+        {/* 中：上下文 —— 模式 · 模板（模板可点开切换） */}
         <div className="hidden items-center gap-1.5 justify-self-center text-ui-sm text-faint md:flex">
           <span>简历</span>
           <span aria-hidden className="text-border-strong">
             ·
           </span>
-          <span className="text-muted-foreground">{template.label} 模板</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {template.label} 模板
+                  <ChevronDownIcon aria-hidden className="size-3" />
+                </button>
+              }
+            />
+            <DropdownMenuContent align="center">
+              {RESUME_TEMPLATES.map((t) => (
+                <DropdownMenuItem key={t.id} onClick={() => setTemplate(t.id)}>
+                  <CheckIcon
+                    aria-hidden
+                    className={cn(
+                      "size-3.5",
+                      t.id === templateId ? "" : "invisible",
+                    )}
+                  />
+                  {t.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* 右：操作区 —— 重置（次级）· 导出（primary 深色） */}
@@ -248,6 +277,7 @@ interface PreviewStageHeaderProps {
   canAutoFit: boolean;
   pageCount: number;
   overflow: boolean;
+  templateLabel: string;
 }
 
 // Preview Stage 顶部轻量工具条：预览标识 + A4 + 模板名 + 智能一页开关 + 真实页数。
@@ -258,6 +288,7 @@ function PreviewStageHeader({
   canAutoFit,
   pageCount,
   overflow,
+  templateLabel,
 }: PreviewStageHeaderProps) {
   return (
     <div className="flex h-9 shrink-0 items-center gap-2.5 border-b bg-card px-3">
@@ -266,7 +297,7 @@ function PreviewStageHeader({
       <Badge className="px-1.5 py-0 text-ui-xs font-medium text-muted-foreground">
         A4
       </Badge>
-      <span className="text-ui-xs text-faint">{template.label}</span>
+      <span className="text-ui-xs text-faint">{templateLabel}</span>
 
       {/* 开了智能一页但压到最紧凑档（间距到底、字号到标准区间下限）仍超目标页数：提示精简 */}
       {autoFit && overflow && (

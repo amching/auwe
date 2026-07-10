@@ -56,8 +56,8 @@ src/
       usePrintResume.ts          # 原生打印导出 PDF：克隆连续源进 #print-root → window.print()
       exportName.ts              # 导出物统一命名 auwe-nb-<时间戳>（.md/PDF 文件名 + PDF 标题）
       resume.css                 # 简历纸排版(.resume-paper) + 页框 + @page/@media print（模板共用）
-      templates.ts               # 视觉模板注册表（id/label，当前仅 clean）
-      templates.css              # 模板配色：每模板一个 [data-resume-template] 块定义 --paper-* token
+      templates.ts               # 视觉模板注册表（id/label：clean / color）
+      templates.css              # 模板样式：每模板一个 [data-resume-template] 块（--paper-* token + 作用域版式细则）
       sampleResume.ts            # 内置示例简历内容（Markdown）
     polish/PolishPage.tsx        # 文风（已跑通的流式润色竖切片）
     tools/ToolsPage.tsx          # 工具（占位）

@@ -24,7 +24,7 @@ import {
   paginateExact,
 } from "./paginate";
 import "./resume.css";
-import { DEFAULT_RESUME_TEMPLATE } from "./templates";
+import type { ResumeTemplateId } from "./templates";
 import "./templates.css";
 
 /** 间距压缩下限：低于此值行距/留白过挤。 */
@@ -106,6 +106,8 @@ interface ResumePreviewProps {
   markdown: string;
   /** 智能一页开关：开 → 先收紧间距、再在标准区间内缩字号，尽量压进一页。 */
   autoFit: boolean;
+  /** 视觉模板 id：写成容器的 data-resume-template，templates.css 据此作用域化配色与版式细则。 */
+  template: ResumeTemplateId;
   /** 每次重新分页后回报页数/溢出/字数/章节数（均基于渲染后的实际内容），供工作台显示。 */
   onLayout?: (info: ResumeLayoutInfo) => void;
 }
@@ -126,6 +128,7 @@ interface ResumePreviewProps {
 export function ResumePreview({
   markdown,
   autoFit,
+  template,
   onLayout,
 }: ResumePreviewProps) {
   const sourceRef = useRef<HTMLDivElement>(null);
@@ -204,8 +207,9 @@ export function ResumePreview({
     });
   }, [autoFit, chooseFit, applyZoom, onLayout]);
 
-  // markdown 变化经 react-markdown 改源 DOM 后需重排（它不被 relayout 直接读取，仅作触发器）。
-  // biome-ignore lint/correctness/useExhaustiveDependencies: markdown 是重排触发器而非直接依赖
+  // markdown 变化经 react-markdown 改源 DOM、template 变化经 data 属性改作用域样式（字距/
+  // 胶囊/引用块都影响高度），之后都需重排（二者不被 relayout 直接读取，仅作触发器）。
+  // biome-ignore lint/correctness/useExhaustiveDependencies: markdown/template 是重排触发器而非直接依赖
   useLayoutEffect(() => {
     let cancelled = false;
     const run = () => {
@@ -218,7 +222,7 @@ export function ResumePreview({
     return () => {
       cancelled = true;
     };
-  }, [relayout, markdown]);
+  }, [relayout, markdown, template]);
 
   // 面板宽度变化 → 只重算缩放，不必重新分页。
   useEffect(() => {
@@ -240,7 +244,7 @@ export function ResumePreview({
        */}
       <div
         aria-hidden
-        data-resume-template={DEFAULT_RESUME_TEMPLATE}
+        data-resume-template={template}
         style={{
           position: "absolute",
           left: "-99999px",
@@ -264,7 +268,7 @@ export function ResumePreview({
       <div
         ref={wrapRef}
         className="resume-pages-wrap"
-        data-resume-template={DEFAULT_RESUME_TEMPLATE}
+        data-resume-template={template}
       >
         <div
           ref={scalerRef}

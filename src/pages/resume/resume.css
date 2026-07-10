@@ -26,6 +26,12 @@
   font-size: calc(10pt + 1pt * var(--resume-type));
   line-height: calc(1.35 + 0.27 * var(--resume-spacing));
   color: var(--paper-ink);
+  /*
+   * 模板里的背景色（如 color 模板的胶囊/引用块软底）必须进 PDF：打印对话框「背景图形」
+   * 默认不勾时 Chromium 会丢背景，exact 强制按屏幕颜色输出。属性可继承，整纸生效。
+   */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 /* 姓名：H1 → 20–23pt 居中 */

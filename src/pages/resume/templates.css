@@ -1,15 +1,98 @@
 /*
- * 简历模板配色：每个模板一个 [data-resume-template="<id>"] 块，只放 --paper-* 颜色 token。
- * 版式在 resume.css（所有模板共用）；页框投影 --paper-shadow 是桌面观感、与模板无关，留在
- * index.css 的 :root。id 与 templates.ts 的注册表一一对应，新增模板在两处各加一条。
+ * 简历模板样式：每个模板一个 [data-resume-template="<id>"] 块——先是 --paper-* 配色 token，
+ * 后接该模板特有的作用域版式细则（都以 [data-resume-template="<id>"] .resume-paper 开头）。
+ * 基础版式在 resume.css（所有模板共用）；页框投影 --paper-shadow 是桌面观感、与模板无关，
+ * 留在 index.css 的 :root。id 与 templates.ts 的注册表一一对应，新增模板在两处各加一条。
+ *
+ * 尺寸类规则一律沿用 --resume-type / --resume-spacing 两个压缩系数（见 resume.css），
+ * 保证「智能一页」与分页测量在任何模板下口径一致。
  *
  * 纸色只由模板决定：不随 App 暗色主题（.dark）变化，任何模板都不许把纸做成暗底。
  */
 
-/* clean：白底黑墨，无彩色点缀 */
+/* ============ clean：白底黑墨，无彩色点缀 ============ */
 [data-resume-template="clean"] {
   --paper: #ffffff;
   --paper-ink: #1f1f1f;
   --paper-ink-muted: #555555;
   --paper-rule: #e2e2e2;
+}
+
+/* ============ color：白纸 + 墨青（#295b5b）点缀，取自用户样张实测采样 ============ */
+[data-resume-template="color"] {
+  --paper: #ffffff;
+  --paper-ink: #333333;
+  --paper-ink-strong: #1a1a1a; /* 条目标题/加粗比正文再深一档（样张如此） */
+  --paper-ink-muted: #777777;
+  --paper-rule: #cbd6d4; /* 细线带一点青调 */
+  --paper-accent: #295b5b;
+  --paper-accent-soft: #e7eeed; /* 胶囊/引用块软底 */
+}
+
+/* 姓名与条目标题、加粗用最深的墨（比 #333 正文深一档）；强调色留给节标题与点缀 */
+[data-resume-template="color"] .resume-paper h1,
+[data-resume-template="color"] .resume-paper h3,
+[data-resume-template="color"] .resume-paper strong {
+  color: var(--paper-ink-strong);
+}
+/* h1/h2 里的加粗/链接等内联写法（如 `# **名字**`）跟随标题色，
+ * 不被上面的 strong 与下面的链接规则盖掉（:is 抬高特异性以稳赢同权规则） */
+[data-resume-template="color"] .resume-paper :is(h1, h2) :is(strong, em, a, code) {
+  color: inherit;
+}
+
+/* 节标题：墨青 + 宽字距，比基础版式小半档（样张节标题相对正文更收敛）；
+ * 去掉基础版式的下边线，改为右侧延伸的细线 */
+[data-resume-template="color"] .resume-paper h2 {
+  display: flex;
+  align-items: center;
+  gap: 10pt;
+  font-size: calc(11.5pt + 1.5pt * var(--resume-type));
+  color: var(--paper-accent);
+  letter-spacing: 0.18em;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+[data-resume-template="color"] .resume-paper h2::after {
+  content: "";
+  flex: 1;
+  border-top: 0.5pt solid var(--paper-rule);
+}
+
+/* 单条分隔线 = 粗墨青实线（样张头部下方的重线）。连续两条仍是强制分页、不上纸 */
+[data-resume-template="color"] .resume-paper hr {
+  border-top: 1.5pt solid var(--paper-accent);
+}
+
+/* 链接：墨青、不带下划线（样张） */
+[data-resume-template="color"] .resume-paper a {
+  color: var(--paper-accent);
+  text-decoration: none;
+}
+
+/* 行内 code 渲染成「胶囊」，承载技能标签（`Python` `React` …）。
+ * nowrap 保证胶囊作为整体换行、不从中间折断（样张如此）。 */
+[data-resume-template="color"] .resume-paper code {
+  font-family: inherit;
+  font-size: calc(9pt + 1pt * var(--resume-type));
+  background: var(--paper-accent-soft);
+  border-radius: 3pt;
+  padding: calc(1pt * var(--resume-spacing)) 5pt;
+  white-space: nowrap;
+}
+
+/* 引用块：软底卡片 + 墨青左边线（样张里项目下的导语卡） */
+[data-resume-template="color"] .resume-paper blockquote {
+  margin: calc(6pt * var(--resume-spacing)) 0;
+  padding: calc(6pt * var(--resume-spacing)) 10pt;
+  background: var(--paper-accent-soft);
+  border-left: 2pt solid var(--paper-accent);
+}
+[data-resume-template="color"] .resume-paper blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* 列表圆点用墨青 */
+[data-resume-template="color"] .resume-paper li::marker {
+  color: var(--paper-accent);
 }

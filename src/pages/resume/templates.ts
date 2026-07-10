@@ -1,14 +1,15 @@
 /**
  * 简历视觉模板注册表。
  *
- * 一个模板 = 一套简历纸配色（--paper-* token），定义在 templates.css 的
- * [data-resume-template="<id>"] 块里；版式（字阶/间距/结构）在 resume.css，所有模板共用。
+ * 一个模板 = 一套简历纸配色（--paper-* token）＋可选的作用域版式细则（节标题样式、
+ * 胶囊/引用块等），都定义在 templates.css 的 [data-resume-template="<id>"] 下；
+ * 基础版式（字阶/间距/分页）在 resume.css，所有模板共用。
  * 生效方式：把 data-resume-template 写在预览两个容器（ResumePreview）与打印 #print-root
  * （usePrintResume）上，token 靠 CSS 继承下发到页框与纸的克隆，无须逐节点携带。
  *
- * 新增模板三步：① ResumeTemplateId 加 id；② 此处登记；③ templates.css 加同 id 的 token 块。
+ * 新增模板三步：① ResumeTemplateId 加 id；② 此处登记；③ templates.css 加同 id 的样式块。
  */
-export type ResumeTemplateId = "clean";
+export type ResumeTemplateId = "clean" | "color";
 
 export interface ResumeTemplate {
   id: ResumeTemplateId;
@@ -18,6 +19,7 @@ export interface ResumeTemplate {
 
 export const RESUME_TEMPLATES: readonly ResumeTemplate[] = [
   { id: "clean", label: "Clean" },
+  { id: "color", label: "Color" },
 ];
 
 export const DEFAULT_RESUME_TEMPLATE: ResumeTemplateId = "clean";
