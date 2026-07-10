@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { exportBaseName } from "./exportName";
+import { DEFAULT_RESUME_TEMPLATE } from "./templates";
 
 /**
  * 简历 PDF 导出：浏览器原生打印（不用 html2canvas / jsPDF，保证文字可选中可搜索）。
@@ -37,6 +38,11 @@ export function usePrintResume() {
       host.id = "print-root";
       document.body.appendChild(host);
     }
+    // 模板配色随预览走：把预览容器上的 data-resume-template 同步到 #print-root，使 --paper-*
+    // token（templates.css 按该属性作用域化）在打印子树内可解析——打印永远与预览同一套配色。
+    host.dataset.resumeTemplate =
+      papers[0].closest<HTMLElement>("[data-resume-template]")?.dataset
+        .resumeTemplate ?? DEFAULT_RESUME_TEMPLATE;
     // 逐页克隆页框内容，每页装进一个「恰好一页内容高（269mm）」的 .resume-print-page 盒子里
     // （见 resume.css）：固定高 + break-after:page 把每个页框钉死成一张物理页，浏览器无法再
     // 合并/回流，故打印断点与预览逐页一致。盒内纸上的 transform: scale(0.9999)（也在 resume.css，

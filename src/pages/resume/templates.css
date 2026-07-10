@@ -1,0 +1,15 @@
+/*
+ * 简历模板配色：每个模板一个 [data-resume-template="<id>"] 块，只放 --paper-* 颜色 token。
+ * 版式在 resume.css（所有模板共用）；页框投影 --paper-shadow 是桌面观感、与模板无关，留在
+ * index.css 的 :root。id 与 templates.ts 的注册表一一对应，新增模板在两处各加一条。
+ *
+ * 纸色只由模板决定：不随 App 暗色主题（.dark）变化，任何模板都不许把纸做成暗底。
+ */
+
+/* clean：白底黑墨，无彩色点缀 */
+[data-resume-template="clean"] {
+  --paper: #ffffff;
+  --paper-ink: #1f1f1f;
+  --paper-ink-muted: #555555;
+  --paper-rule: #e2e2e2;
+}

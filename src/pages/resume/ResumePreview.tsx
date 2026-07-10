@@ -24,6 +24,8 @@ import {
   paginateExact,
 } from "./paginate";
 import "./resume.css";
+import { DEFAULT_RESUME_TEMPLATE } from "./templates";
+import "./templates.css";
 
 /** 间距压缩下限：低于此值行距/留白过挤。 */
 const SPACING_FLOOR = 0.55;
@@ -232,9 +234,13 @@ export function ResumePreview({
       {/*
        * 隐藏连续源（唯一事实源）：屏外定位但仍参与布局以供 paginate 测量；固定内容宽 178mm。
        * --resume-spacing / --resume-type 由 relayout 写在其上。打印克隆的是下方可见页框，非此连续源。
+       *
+       * data-resume-template：模板配色作用域（templates.css 按它定义 --paper-* token），挂在
+       * 源包装与页栈包装两个容器上，靠继承下发——页框/纸的克隆（paginate/buildPaper）无须携带。
        */}
       <div
         aria-hidden
+        data-resume-template={DEFAULT_RESUME_TEMPLATE}
         style={{
           position: "absolute",
           left: "-99999px",
@@ -255,7 +261,11 @@ export function ResumePreview({
       </div>
 
       {/* 可见页栈：缩放适配面板宽（内容仍按 178mm 折行）。 */}
-      <div ref={wrapRef} className="resume-pages-wrap">
+      <div
+        ref={wrapRef}
+        className="resume-pages-wrap"
+        data-resume-template={DEFAULT_RESUME_TEMPLATE}
+      >
         <div
           ref={scalerRef}
           className="resume-pages-scaler"

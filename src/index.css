@@ -130,11 +130,7 @@
 
   --radius: 0.625rem;
 
-  /* —— 简历纸：白底黑墨，恒定，不随主题（仅 resume.css）—— */
-  --paper: #ffffff;
-  --paper-ink: #1f1f1f;
-  --paper-ink-muted: #555555;
-  --paper-rule: #e2e2e2;
+  /* —— 简历纸页框投影：桌面观感，与模板无关（配色 --paper-* 见 pages/resume/templates.css）—— */
   --paper-shadow: 0 0 0 1px oklch(0.28 0.02 170 / 0.04),
     0 1px 2px oklch(0.28 0.02 170 / 0.05),
     0 8px 24px -8px oklch(0.28 0.02 170 / 0.12),
@@ -157,7 +153,7 @@
 }
 
 .dark {
-  /* 暗色 = 房间变暗；简历纸（--paper-*）不在此重定义，恒为白底黑墨 */
+  /* 暗色 = 房间变暗；简历纸配色（--paper-*）由模板决定（pages/resume/templates.css），不随主题 */
   --background: oklch(0.2 0.008 190); /* #17211F */
   --foreground: oklch(0.93 0.005 180); /* #E7EEEC */
   --card: oklch(0.24 0.01 190); /* #202B29 */

@@ -1,6 +1,6 @@
 /*
  * 简历纸排版：全部作用域在 .resume-paper 下，屏幕预览与打印共用。
- * 纸永远深墨浅底，pt 字阶（打印语义），颜色落 --paper-* token。
+ * 纸永远深墨浅底，pt 字阶（打印语义），颜色落 --paper-* token（模板配色，见 templates.css）。
  */
 .resume-paper {
   /*

@@ -1,6 +1,6 @@
 // 内置示例简历：真实感内容，兼作「约定优于语法」的教学载体。
 // 顶部注释块用 HTML 注释，会被 sanitize/渲染吞掉——只在编辑器里教用户，不出现在预览与导出的 PDF。
-export const RESUME_TEMPLATE = `<!--
+export const SAMPLE_RESUME = `<!--
   约定优于语法 —— 你只写朴素的 Markdown，版式由「结构」自动推断，不必记任何专有标记。
   四条约定（都是标准 GFM，写错也能平滑降级）：
 

@@ -29,7 +29,11 @@ import { useResume } from "@/stores/resume";
 import { exportBaseName } from "./exportName";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { type ResumeLayoutInfo, ResumePreview } from "./ResumePreview";
+import { DEFAULT_RESUME_TEMPLATE, getResumeTemplate } from "./templates";
 import { usePrintResume } from "./usePrintResume";
+
+// 当前视觉模板（尚无切换 UI，恒为默认；将来切换时改为来自状态）。
+const template = getResumeTemplate(DEFAULT_RESUME_TEMPLATE);
 
 // 去掉 HTML 注释（如内置模板的教学注释）。它不进预览/PDF，判断有无内容与导出的 Markdown 都应与之一致。
 function stripHtmlComments(md: string): string {
@@ -55,7 +59,7 @@ function downloadMarkdown(markdown: string) {
 export function ResumePage() {
   const markdown = useResume((s) => s.markdown);
   const setMarkdown = useResume((s) => s.setMarkdown);
-  const resetToTemplate = useResume((s) => s.resetToTemplate);
+  const resetToSample = useResume((s) => s.resetToSample);
   const { print } = usePrintResume();
 
   const [tab, setTab] = useState<"edit" | "preview">("edit");
@@ -134,7 +138,7 @@ export function ResumePage() {
                 onLayout={onLayout}
               />
             ) : (
-              <EmptyState onRestore={resetToTemplate} />
+              <EmptyState onRestore={resetToSample} />
             )}
           </div>
         </div>
@@ -163,7 +167,7 @@ export function ResumePage() {
           <span aria-hidden className="text-border-strong">
             ·
           </span>
-          <span className="text-muted-foreground">Clean 模板</span>
+          <span className="text-muted-foreground">{template.label} 模板</span>
         </div>
 
         {/* 右：操作区 —— 重置（次级）· 导出（primary 深色） */}
@@ -188,7 +192,7 @@ export function ResumePage() {
                 <AlertDialogAction
                   variant="destructive"
                   onClick={() => {
-                    resetToTemplate();
+                    resetToSample();
                     setResetOpen(false);
                   }}
                 >
@@ -262,7 +266,7 @@ function PreviewStageHeader({
       <Badge className="px-1.5 py-0 text-ui-xs font-medium text-muted-foreground">
         A4
       </Badge>
-      <span className="text-ui-xs text-faint">Clean</span>
+      <span className="text-ui-xs text-faint">{template.label}</span>
 
       {/* 开了智能一页但压到最紧凑档（间距到底、字号到标准区间下限）仍超目标页数：提示精简 */}
       {autoFit && overflow && (
