@@ -88,6 +88,10 @@
 .resume-paper ul {
   list-style: disc;
 }
+/* 二级无序用空心圆点，层级更清晰 */
+.resume-paper ul ul {
+  list-style: circle;
+}
 .resume-paper ol {
   list-style: decimal;
 }
