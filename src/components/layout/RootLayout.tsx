@@ -1,6 +1,6 @@
 import { SettingsIcon } from "lucide-react";
-import { Suspense } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,17 @@ const NAV = [
 ];
 
 export function RootLayout() {
+  // 路由级标签页标题（简历 · auwe / 文风 · auwe / 工具 · auwe）。品牌在纯文本元数据里
+  // 保持本名 auwe（wordmark 的间隔号是排印形态，不进 title）。与打印导出不冲突：
+  // usePrintResume 打印时暂换标题、afterprint 还原，而这里只在 pathname 变化时写入。
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const item = NAV.find((n) =>
+      n.end ? pathname === n.to : pathname.startsWith(n.to),
+    );
+    document.title = item ? `${item.label} · auwe` : "auwe — 职场工具站";
+  }, [pathname]);
+
   return (
     <div className="flex min-h-svh flex-col">
       {/* App shell header：56px、半透明 canvas 底 + 发丝下边、三栏 grid（导航真居中）。 */}
