@@ -38,6 +38,7 @@ pnpm dev
 
 - **Endpoint**：任意 OpenAI 兼容的 API 地址（也支持 Anthropic 等）。
 - **API Key**：你自己的密钥。
+- **Model**：要调用的模型 id（如 `gpt-4o-mini`）。
 
 > Key 仅保存在浏览器 `localStorage`，不会离开你的设备。
 > 若你的端点未开启 CORS，可在部署时启用可选的代理函数。

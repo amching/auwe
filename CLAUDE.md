@@ -40,8 +40,8 @@
 
 ```
 src/
-  main.tsx                       # 挂载 RouterProvider
-  App.tsx                        # createBrowserRouter：根布局 + 三路由（SPA/library 模式）
+  main.tsx                       # 挂载 <App/>（StrictMode + createRoot）
+  App.tsx                        # createBrowserRouter：根布局 + 三路由（页面级 lazy code-split）
   index.css                      # Tailwind v4 + shadcn 主题变量
   components/
     layout/RootLayout.tsx        # 顶部导航 + <Outlet/>
@@ -54,6 +54,7 @@ src/
       ResumePreview.tsx          # 隐藏连续源(唯一事实源) + 真分页 A4 页框 + 缩放适配 + 智能一页
       paginate.ts                # 分页引擎：按页高切页、克隆源节点重建各页框
       usePrintResume.ts          # 原生打印导出 PDF：克隆连续源进 #print-root → window.print()
+      exportName.ts              # 导出物统一命名 auwe-nb-<时间戳>（.md/PDF 文件名 + PDF 标题）
       resume.css                 # 简历纸排版(.resume-paper) + 页框 + @page/@media print
       resumeTemplate.ts          # 内置示例模板
     polish/PolishPage.tsx        # 文风（已跑通的流式润色竖切片）
