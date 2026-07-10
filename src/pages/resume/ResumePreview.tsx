@@ -17,6 +17,7 @@ import "@fontsource/noto-sans-sc/600.css";
 import {
   buildPaper,
   CONTENT_WIDTH_PX,
+  countSegments,
   MM_TO_PX,
   PAGE_CONTENT_PX,
   PAGE_WIDTH_PX,
@@ -79,7 +80,7 @@ const components: Components = { h3: ResumeH3 };
 export interface ResumeLayoutInfo {
   /** 分页后的物理页数（所见即所得）。 */
   pageCount: number;
-  /** 开了智能一页但仍压不进一页：内容太多，建议精简。 */
+  /** 开了智能一页但仍压不进目标页数（每个强制分页段各一页）：内容太多，建议精简。 */
   overflow: boolean;
   /** 实际内容字数：从渲染后的可见文本计，已排除注释 / Markdown 语法 / 链接 URL。 */
   charCount: number;
@@ -116,8 +117,9 @@ interface ResumePreviewProps {
  *   保证每页 ≤ 页高）；usePrintResume 打印时克隆的正是这些页框（而非连续源），故打印分页与
  *   预览逐页一致，末页留白也如实呈现。
  * - 整个页栈用 transform: scale 适配面板宽度；内容始终按真实 178mm 折行，故预览折行=打印折行。
- * - 智能一页：沿 fit 路径（先收紧间距、再在标准区间内缩字号，见 varsForFit）二分求能压进一页
- *   的最舒适一组；压到最紧凑仍超一页则回报 overflow，交给头部提示精简。
+ * - 智能一页：沿 fit 路径（先收紧间距、再在标准区间内缩字号，见 varsForFit）二分求能压进
+ *   目标页数（= 段数，见 countSegments；无强制分页即 1 页）的最舒适一组；压到最紧凑仍超标
+ *   则回报 overflow，交给头部提示精简。
  */
 export function ResumePreview({
   markdown,
@@ -141,24 +143,27 @@ export function ResumePreview({
     wrap.style.height = `${host.scrollHeight * z}px`;
   }, []);
 
-  // 选定压缩档位 fit：智能一页时二分求「能压进一页的最小 fit」（最舒适的可行解），否则 0（舒适默认）。
+  // 选定压缩档位 fit：智能一页时二分求「能压进目标页数的最小 fit」（最舒适的可行解），否则 0。
+  // 目标页数 = 段数（强制分页把简历分成几段就几页，如中英双版各一页；无强制分页即 1 页）。
   // 判定用「重建实测」的严格分页（paginateExact）+ 带安全余量的目标高度（FIT_TARGET_PX），
   // 避免收敛到重建后实际超高、或卡边导致原生打印多翻一页的档位。
   const chooseFit = useCallback(
-    (source: HTMLElement): number => {
-      const fitsOnePage = (fit: number) => {
+    (source: HTMLElement, segments: number): number => {
+      const fits = (fit: number) => {
         const { spacing, type } = varsForFit(fit);
         source.style.setProperty("--resume-spacing", String(spacing));
         source.style.setProperty("--resume-type", String(type));
-        return paginateExact(source, spacing, type, FIT_TARGET_PX).length <= 1;
+        return (
+          paginateExact(source, spacing, type, FIT_TARGET_PX).length <= segments
+        );
       };
-      if (!autoFit || fitsOnePage(0)) return 0; // 舒适档已能一页（或未开）
-      if (!fitsOnePage(1)) return 1; // 压到最紧凑仍不止一页
-      let lo = 0; // 已知进不了一页
-      let hi = 1; // 已知能进一页
+      if (!autoFit || fits(0)) return 0; // 舒适档已达标（或未开）
+      if (!fits(1)) return 1; // 压到最紧凑仍超目标页数
+      let lo = 0; // 已知不达标
+      let hi = 1; // 已知达标
       for (let i = 0; i < 16; i++) {
         const mid = (lo + hi) / 2;
-        if (fitsOnePage(mid)) hi = mid;
+        if (fits(mid)) hi = mid;
         else lo = mid;
       }
       return hi; // 最小的可行 fit = 最舒适
@@ -172,7 +177,9 @@ export function ResumePreview({
     const host = hostRef.current;
     if (!source || !host) return;
 
-    const { spacing, type } = varsForFit(chooseFit(source));
+    // 段数由源结构决定（连续两条 --- ＝ 强制分页），与压缩档位无关，算一次即可。
+    const segments = countSegments(source);
+    const { spacing, type } = varsForFit(chooseFit(source, segments));
     source.style.setProperty("--resume-spacing", String(spacing));
     source.style.setProperty("--resume-type", String(type));
     // 严格分页：重建实测校验，保证每页重建后 ≤ 页高（预览不压线、打印不裁行）。
@@ -189,7 +196,7 @@ export function ResumePreview({
     applyZoom();
     onLayout?.({
       pageCount: pages.length,
-      overflow: autoFit && pages.length > 1,
+      overflow: autoFit && pages.length > segments,
       charCount: countContent(source.textContent ?? ""),
       sectionCount: source.querySelectorAll("h2").length,
     });

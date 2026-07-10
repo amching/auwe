@@ -6,6 +6,9 @@
  * 尽量贴合浏览器打印的分页行为：
  *   - 顶层块之间、列表 li 之间可断；li 内部不断（等价 break-inside: avoid）。
  *   - 节标题（h1/h2/h3）不落在页尾（等价 break-after: avoid）。
+ *   - 连续两条分隔线（Markdown 里 `---` 紧跟 `---`，渲染成相邻 <hr><hr>）＝强制从新页开始，
+ *     两条线本身不上纸（等价手写 page-break；中英双版简历各起一页就靠它）。纯 GFM，
+ *     不认识这条约定的渲染器只会显示两条细线，平滑降级。
  * 切页只读几何、不改源；页面渲染时把源节点 cloneNode 进各页框——克隆自已 sanitize 的 DOM，
  * 不新开渲染入口，铁律「所有渲染必过 sanitize」仍成立。
  */
@@ -37,17 +40,30 @@ interface Unit {
   list: Element | null;
   /** 是否节标题：不允许落在页尾。 */
   heading: boolean;
+  /** 强制从新页开始（源里此单元前有连续 ≥2 条 <hr>）。 */
+  breakBefore: boolean;
   /** 相对源顶端的 border-box 上/下沿（px）。 */
   top: number;
   bottom: number;
 }
 
-/** 把源的顶层块摊平成可断单元：列表拆成 li，其余块各为一个单元。 */
+/**
+ * 把源的顶层块摊平成可断单元：列表拆成 li，其余块各为一个单元。
+ * 连续 ≥2 条 <hr> 不成为单元（不上纸），折叠成下一个单元的 breakBefore 标记。
+ */
 function collectUnits(source: HTMLElement): Unit[] {
   const srcTop = source.getBoundingClientRect().top;
+  const children = Array.from(source.children);
   const units: Unit[] = [];
-  for (const child of Array.from(source.children)) {
+  let pendingBreak = false;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
     const tag = child.tagName;
+    if (tag === "HR" && children[i + 1]?.tagName === "HR") {
+      while (children[i + 1]?.tagName === "HR") i++; // 吞掉整串 hr
+      pendingBreak = true;
+      continue;
+    }
     if (tag === "UL" || tag === "OL") {
       for (const li of Array.from(child.children)) {
         const r = li.getBoundingClientRect();
@@ -56,9 +72,11 @@ function collectUnits(source: HTMLElement): Unit[] {
           kind: "li",
           list: child,
           heading: false,
+          breakBefore: pendingBreak,
           top: r.top - srcTop,
           bottom: r.bottom - srcTop,
         });
+        pendingBreak = false;
       }
     } else {
       const r = child.getBoundingClientRect();
@@ -67,12 +85,22 @@ function collectUnits(source: HTMLElement): Unit[] {
         kind: "block",
         list: null,
         heading: HEADING.test(tag),
+        breakBefore: pendingBreak,
         top: r.top - srcTop,
         bottom: r.bottom - srcTop,
       });
+      pendingBreak = false;
     }
   }
   return units;
+}
+
+/**
+ * 段数 = 强制分页标记数 + 1。智能一页据此设定目标页数（每段压进一页），
+ * 否则含强制分页的简历永远「压不进一页」，二分会直接顶到最紧凑档。
+ */
+export function countSegments(source: HTMLElement): number {
+  return collectUnits(source).filter((u) => u.breakBefore).length + 1;
 }
 
 /**
@@ -98,6 +126,13 @@ export function paginate(
       cur.push(u);
       continue;
     }
+    // 强制分页：无条件收页，本单元开新页。
+    if (u.breakBefore) {
+      pages.push(cur);
+      cur = [u];
+      pageStart = u.top;
+      continue;
+    }
     // 单元底沿相对本页起点是否仍在一页内。首个单元无条件放入（超高块允许溢出本页）。
     if (u.bottom - pageStart <= pageHeightPx + EPS) {
       cur.push(u);
@@ -113,9 +148,22 @@ export function paginate(
   return pages;
 }
 
-/** 标题不落页尾：把页尾的标题挪到下一页页首（可能连挪多个）。保留≥1个单元，避免空页。 */
+/**
+ * 把单元推到第 p 页之后：若下一页以强制分页单元开头（属于新段），不能把本段内容混进去，
+ * 在中间插一张新页承接。paginateExact 的回退与标题挪移都经此保持段边界不被打破。
+ */
+function pushForward(pages: Unit[][], p: number, u: Unit): void {
+  if (!pages[p + 1] || pages[p + 1][0]?.breakBefore) pages.splice(p + 1, 0, []);
+  pages[p + 1].unshift(u);
+}
+
+/**
+ * 标题不落页尾：把页尾的标题挪到下一页页首（可能连挪多个）。保留≥1个单元，避免空页。
+ * 下一页是新段（强制分页）时不挪——段末标题后面本就没有正文可跟，挪了反而孤页。
+ */
 function pullTrailingHeadings(pages: Unit[][]): void {
   for (let p = 0; p < pages.length - 1; p++) {
+    if (pages[p + 1][0]?.breakBefore) continue;
     while (pages[p].length > 1 && pages[p][pages[p].length - 1].heading) {
       const h = pages[p].pop();
       if (h) pages[p + 1].unshift(h);
@@ -147,16 +195,18 @@ export function paginateExact(
   for (let p = 0; p < pages.length; p++) {
     let paper = buildPaper(pages[p], spacing, type);
     host.appendChild(paper);
-    // 超高就回退尾单元；同时保持标题不落页尾。保留≥1个单元，避免死循环/空页。
-    while (
-      pages[p].length > 1 &&
-      (paper.getBoundingClientRect().height > pageHeightPx + EPS ||
-        (p < pages.length - 1 && pages[p][pages[p].length - 1].heading))
-    ) {
+    // 超高就回退尾单元；同时保持标题不落页尾（下一页是新段时段末标题可留）。
+    // 回退经 pushForward，不把本段内容混进强制分页开启的新段。保留≥1个单元，避免死循环/空页。
+    while (pages[p].length > 1) {
+      const tooTall = paper.getBoundingClientRect().height > pageHeightPx + EPS;
+      const nextSameSegment =
+        p < pages.length - 1 && !pages[p + 1][0]?.breakBefore;
+      const trailingHeading =
+        nextSameSegment && pages[p][pages[p].length - 1].heading;
+      if (!tooTall && !trailingHeading) break;
       const moved = pages[p].pop();
       if (!moved) break;
-      if (!pages[p + 1]) pages.push([]);
-      pages[p + 1].unshift(moved);
+      pushForward(pages, p, moved);
       host.removeChild(paper);
       paper = buildPaper(pages[p], spacing, type);
       host.appendChild(paper);
