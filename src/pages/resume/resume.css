@@ -84,6 +84,13 @@
   margin: calc(4pt * var(--resume-spacing)) 0;
   padding-left: 16pt;
 }
+/* Tailwind preflight 把 ul/ol 重置成 list-style:none，这里显式恢复标记（- → disc，1 → decimal） */
+.resume-paper ul {
+  list-style: disc;
+}
+.resume-paper ol {
+  list-style: decimal;
+}
 .resume-paper li {
   margin: calc(3pt * var(--resume-spacing)) 0;
 }
