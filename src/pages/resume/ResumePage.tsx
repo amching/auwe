@@ -264,7 +264,7 @@ function PreviewStageHeader({
       </Badge>
       <span className="text-ui-xs text-faint">Clean</span>
 
-      {/* 开了智能一页但压到间距下限仍超一页：提示精简（字号不动，靠间距压不下更多） */}
+      {/* 开了智能一页但压到最紧凑档（间距到底、字号到标准区间下限）仍超目标页数：提示精简 */}
       {autoFit && overflow && (
         <span className="text-ui-xs font-medium text-warning">
           内容较多，建议精简

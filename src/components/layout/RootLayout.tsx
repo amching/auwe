@@ -34,11 +34,10 @@ export function RootLayout() {
               aria-hidden
               className="h-3.5 w-px shrink-0 bg-border-strong"
             />
-            {/* 副标题末字在「站」↔「栈」间缓慢交叉溶解（工具站 / 工具栈 双关） */}
-            <span
-              aria-label="职场工具站"
-              className="truncate text-ui-xs font-medium tracking-wide text-faint"
-            >
+            {/* 副标题末字在「站」↔「栈」间缓慢交叉溶解（工具站 / 工具栈 双关）。
+                动画字形对读屏隐藏，读屏念 sr-only 的完整文案（generic span 不支持 aria-label）。 */}
+            <span className="truncate text-ui-xs font-medium tracking-wide text-faint">
+              <span className="sr-only">职场工具站</span>
               <span aria-hidden>职场工具</span>
               <span aria-hidden className="morph-glyph">
                 <span className="morph-slot">站</span>

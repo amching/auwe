@@ -61,7 +61,7 @@ export function usePrintResume() {
     document.title = exportBaseName();
 
     const cleanup = () => {
-      host.innerHTML = "";
+      host.replaceChildren();
       document.title = prevTitle;
     };
     window.addEventListener("afterprint", cleanup, { once: true });

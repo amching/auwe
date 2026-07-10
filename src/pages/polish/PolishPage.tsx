@@ -6,7 +6,8 @@ import { streamCompletion } from "@/lib/llm/client";
 import { MarkdownPreview } from "@/lib/markdown/MarkdownPreview";
 import { useSettings } from "@/stores/settings";
 
-const SYSTEM_PROMPT = `你是一位资深的职场写作教练。请润色下面这段职场文字：
+// 拼在用户原文前、作为单条 user prompt 发送（不是 system 消息，见下方 streamCompletion 调用）。
+const POLISH_PROMPT = `你是一位资深的职场写作教练。请润色下面这段职场文字：
 - 让语言更专业、有力、简洁；
 - 尽可能把模糊的描述改写成可量化的成果（数字、比例、影响范围）；
 - 用 Markdown 输出：先给出「润色后」的版本，再用要点列出「修改说明」。
@@ -28,7 +29,7 @@ export function PolishPage() {
     try {
       const stream = streamCompletion(
         { endpoint, apiKey, model },
-        SYSTEM_PROMPT + input,
+        POLISH_PROMPT + input,
       );
       for await (const chunk of stream) {
         setOutput((prev) => prev + chunk);

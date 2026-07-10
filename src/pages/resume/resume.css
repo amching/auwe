@@ -18,7 +18,7 @@
    *   正文 10→11pt / 条目标题 10.5→11.5pt / 节标题 12→13.5pt / 姓名 20→23pt / 次要信息 9→10pt。
    * --resume-spacing ∈ [floor,1]：间距系数。只驱动纵向留白（line-height 与各 margin/padding/gap）。
    *
-   * 二者由 ResumePreview 写成 .resume-paper 的 inline 变量；打印克隆 outerHTML 时随之带走
+   * 二者由 ResumePreview / buildPaper 写成 .resume-paper 的 inline 变量；打印 cloneNode 时随之带走
    * → 预览与 PDF 的字号/间距一致。line-height 用插值（直接乘会压到 <1）：spacing 1→1.62，0→1.35。
    */
   --resume-type: 1;
@@ -128,7 +128,8 @@
 /*
  * 预览页框（真分页所见即所得）：每个 .resume-page 是一张 A4 纸，内边距 = @page 页边距，
  * 内部 .resume-paper 内容宽自然落到 178mm，与隐藏源 / 打印一致。整栈由 JS transform: scale
- * 缩放适配面板宽（缩放不改折行）。只作用于屏幕；打印走 #print-root 的连续源，与此无关。
+ * 缩放适配面板宽（缩放不改折行）。只作用于屏幕；打印时这些页框被克隆进 #print-root，
+ * 由下方打印规则接管（见 usePrintResume），此处样式与打印无关。
  */
 .resume-pages-wrap {
   position: relative;
@@ -158,7 +159,8 @@
 
 /*
  * 打印规则（仅 paged media 生效，屏幕上被忽略）。
- * 打印走主文档 portal：#print-root（body 直下）承载连续源简历，打印时隐藏 body 下其余节点。
+ * 打印走主文档 portal：#print-root（body 直下）承载预览已分好的页框克隆（usePrintResume
+ * 把每个 .resume-paper 装进一个 .resume-print-page），打印时隐藏 body 下其余节点。
  * 页边距由 @page 控制，纸内不再留 padding。
  */
 @page {
