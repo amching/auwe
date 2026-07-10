@@ -4,11 +4,20 @@ import { exportBaseName } from "./exportName";
 /**
  * 简历 PDF 导出：浏览器原生打印（不用 html2canvas / jsPDF，保证文字可选中可搜索）。
  *
- * 克隆的是隐藏的「连续源」#resume-print-source（而非可见的分页页框）——让浏览器按 @page
- * 原生分页。源与预览分页共用同一份 CSS / 内容宽（178mm）/ 字号间距系数，故基本一致：它带的
- * inline --resume-spacing / --resume-type 随 outerHTML 一起进 #print-root，打印字号间距与预览一致。
+ * 克隆的是**预览已经分好的页框**（.resume-pages 里每页的 .resume-paper），每页之间插入强制
+ * 分页（break-before: page），而不是克隆连续源让浏览器自己重新分页。这样打印与预览用的是同一套
+ * 分页结果——所见即所得。
  *
- * 把它克隆进 body 直下的 #print-root，@media print（resume.css 内）隐藏 body 下除 #print-root
+ * 为什么不再让浏览器原生分页：屏幕渲染会把行盒对齐到设备像素（每行量到的高度略偏大），我们的
+ * 分页引擎（paginate.ts）读的是屏幕几何，于是比浏览器原生分页断得更早；而浏览器打印连续源时按
+ * 打印分辨率排版、每页能多塞两三行 → 预览与 PDF 的断页位置差两三行。改成打印预览页框后，因为屏幕
+ * 一贯量得偏高，每个页框的内容打印时只会更矮、绝不会溢出本页，故页数与断点与预览逐页一致。
+ *
+ * 每个 .resume-paper 自带 relayout/buildPaper 写入的 inline --resume-spacing / --resume-type，
+ * cloneNode 时一并带走 → 打印字号/间距与预览一致。克隆的是已过 rehype-sanitize 的 DOM，不新开
+ * 渲染入口，铁律「所有渲染必过 sanitize」仍成立。
+ *
+ * 把页框克隆进 body 直下的 #print-root，@media print（resume.css 内）隐藏 body 下除 #print-root
  * 外的一切（含下拉/弹层 portal），再 window.print()。挂在 body 直下 + 打印时隐藏其余节点，使打印
  * 内容不受工作台祖先 overflow/transform 影响，也不被残留 portal 撑宽而触发打印缩放。
  *
@@ -16,8 +25,11 @@ import { exportBaseName } from "./exportName";
  */
 export function usePrintResume() {
   const print = useCallback(async () => {
-    const paper = document.getElementById("resume-print-source");
-    if (!paper) return;
+    // 预览已建好的分页页框（唯一事实源：所见即所得）。
+    const papers = document.querySelectorAll<HTMLElement>(
+      ".resume-pages > .resume-page > .resume-paper",
+    );
+    if (papers.length === 0) return;
 
     let host = document.getElementById("print-root");
     if (!host) {
@@ -25,8 +37,18 @@ export function usePrintResume() {
       host.id = "print-root";
       document.body.appendChild(host);
     }
-    // 克隆隐藏连续源的渲染节点，保证打印与预览逐字一致。
-    host.innerHTML = paper.outerHTML;
+    // 逐页克隆页框内容，每页装进一个「恰好一页内容高（269mm）」的 .resume-print-page 盒子里
+    // （见 resume.css）：固定高 + break-after:page 把每个页框钉死成一张物理页，浏览器无法再
+    // 合并/回流，故打印断点与预览逐页一致。盒内纸上的 transform: scale(0.9999)（也在 resume.css，
+    // 三个坑见彼处注释）让打印沿用屏幕的小数几何——否则 Chromium 打印会逐行取整、内容比预览
+    // 高约 8%，页底最后一行会被挤出页外。
+    host.replaceChildren();
+    for (const paper of papers) {
+      const box = document.createElement("div");
+      box.className = "resume-print-page";
+      box.appendChild(paper.cloneNode(true));
+      host.appendChild(box);
+    }
 
     // 打印前确保 Noto Sans SC 的相关切片已加载，否则打印可能落到未嵌入的系统字体、丢字。
     if (document.fonts?.ready) {

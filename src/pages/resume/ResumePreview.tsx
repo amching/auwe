@@ -20,7 +20,7 @@ import {
   MM_TO_PX,
   PAGE_CONTENT_PX,
   PAGE_WIDTH_PX,
-  paginate,
+  paginateExact,
 } from "./paginate";
 import "./resume.css";
 
@@ -111,9 +111,10 @@ interface ResumePreviewProps {
  * 简历预览：真分页 + 缩放适配。
  *
  * - 隐藏的连续 `.resume-paper#resume-print-source` 是唯一事实源：react-markdown + rehype-sanitize
- *   渲染一次（铁律），固定内容宽 178mm。既供测量分页，也供 usePrintResume 克隆打印。
- * - 可见区是 N 个 A4 页框，用 paginate/buildPaper 把源节点克隆分配进去 → 与打印分页基本一致，
- *   末页留白也如实呈现。
+ *   渲染一次（铁律），固定内容宽 178mm，供 paginate 测量分页。
+ * - 可见区是 N 个 A4 页框，用 paginateExact/buildPaper 把源节点克隆分配进去（重建实测校验，
+ *   保证每页 ≤ 页高）；usePrintResume 打印时克隆的正是这些页框（而非连续源），故打印分页与
+ *   预览逐页一致，末页留白也如实呈现。
  * - 整个页栈用 transform: scale 适配面板宽度；内容始终按真实 178mm 折行，故预览折行=打印折行。
  * - 智能一页：沿 fit 路径（先收紧间距、再在标准区间内缩字号，见 varsForFit）二分求能压进一页
  *   的最舒适一组；压到最紧凑仍超一页则回报 overflow，交给头部提示精简。
@@ -141,14 +142,15 @@ export function ResumePreview({
   }, []);
 
   // 选定压缩档位 fit：智能一页时二分求「能压进一页的最小 fit」（最舒适的可行解），否则 0（舒适默认）。
-  // 只读几何。判定用带安全余量的目标高度（FIT_TARGET_PX），避免卡边导致原生打印多翻一页。
+  // 判定用「重建实测」的严格分页（paginateExact）+ 带安全余量的目标高度（FIT_TARGET_PX），
+  // 避免收敛到重建后实际超高、或卡边导致原生打印多翻一页的档位。
   const chooseFit = useCallback(
     (source: HTMLElement): number => {
       const fitsOnePage = (fit: number) => {
         const { spacing, type } = varsForFit(fit);
         source.style.setProperty("--resume-spacing", String(spacing));
         source.style.setProperty("--resume-type", String(type));
-        return paginate(source, FIT_TARGET_PX).length <= 1;
+        return paginateExact(source, spacing, type, FIT_TARGET_PX).length <= 1;
       };
       if (!autoFit || fitsOnePage(0)) return 0; // 舒适档已能一页（或未开）
       if (!fitsOnePage(1)) return 1; // 压到最紧凑仍不止一页
@@ -173,7 +175,8 @@ export function ResumePreview({
     const { spacing, type } = varsForFit(chooseFit(source));
     source.style.setProperty("--resume-spacing", String(spacing));
     source.style.setProperty("--resume-type", String(type));
-    const pages = paginate(source);
+    // 严格分页：重建实测校验，保证每页重建后 ≤ 页高（预览不压线、打印不裁行）。
+    const pages = paginateExact(source, spacing, type);
 
     host.replaceChildren();
     for (const page of pages) {
@@ -220,8 +223,8 @@ export function ResumePreview({
   return (
     <>
       {/*
-       * 隐藏连续源（唯一事实源）：屏外定位但仍参与布局以供测量；固定内容宽 178mm。
-       * #resume-print-source 供 usePrintResume 克隆打印；--resume-spacing / --resume-type 由 relayout 写在其上。
+       * 隐藏连续源（唯一事实源）：屏外定位但仍参与布局以供 paginate 测量；固定内容宽 178mm。
+       * --resume-spacing / --resume-type 由 relayout 写在其上。打印克隆的是下方可见页框，非此连续源。
        */}
       <div
         aria-hidden

@@ -14,6 +14,12 @@
 export const MM_TO_PX = 96 / 25.4;
 /** A4 一页内容高：297 − 上下页边距 14mm 各一（见 resume.css @page）。 */
 export const PAGE_CONTENT_PX = (297 - 14 * 2) * MM_TO_PX;
+/**
+ * 分页打包预算：整页内容高再留 2mm 余量。切满到恰好 269mm 的页极脆——mm→px 舍入、
+ * 列表中缝拆页时 li 外边距穿透等亚毫米级误差，都可能让打印把页尾最后一块挤到下一页
+ * （多出一张近空白页）。2mm（≈7.6px）足以吸收这些误差，肉眼看不出页底少了这点。
+ */
+export const PAGE_BUDGET_PX = PAGE_CONTENT_PX - 2 * MM_TO_PX;
 /** A4 内容宽：210 − 左右页边距 16mm 各一。源与页框都用它，保证折行一致。 */
 export const CONTENT_WIDTH_PX = (210 - 16 * 2) * MM_TO_PX;
 /** A4 整页尺寸（含页边距），用于页框。 */
@@ -103,13 +109,61 @@ export function paginate(
   }
   if (cur.length) pages.push(cur);
 
-  // 标题不落页尾：把页尾的标题挪到下一页页首（可能连挪多个）。保留≥1个单元，避免空页。
+  pullTrailingHeadings(pages);
+  return pages;
+}
+
+/** 标题不落页尾：把页尾的标题挪到下一页页首（可能连挪多个）。保留≥1个单元，避免空页。 */
+function pullTrailingHeadings(pages: Unit[][]): void {
   for (let p = 0; p < pages.length - 1; p++) {
     while (pages[p].length > 1 && pages[p][pages[p].length - 1].heading) {
       const h = pages[p].pop();
       if (h) pages[p + 1].unshift(h);
     }
   }
+}
+
+/**
+ * 严格分页：先按源几何切页（paginate），再逐页「重建 + 实测」校验。
+ *
+ * 为什么必须校验：paginate 量的是连续源里各单元的跨度，而 buildPaper 重建页面时
+ * 外边距折叠关系在切点处改变（首单元的 margin-top 不再与上一单元折叠、跨页列表重建外壳等），
+ * 重建页可比量得的跨度高出十几 px。切满的页会因此溢出 A4 页框——预览里最后一行被下一页
+ * 页框盖住、打印时被裁掉（「智能一页后最后一行显示不完整」的根因之一）。
+ *
+ * 做法：把每页 buildPaper 后放进 178mm 宽的隐藏测量容器实测高度，超出页高就把尾单元推给
+ * 下一页（并保持「标题不落页尾」），逐页向后级联，必要时自然多出新页。测量容器用源的父级
+ * （即屏外 178mm 包装 div），与真实页框同宽，故实测折行/高度即最终结果。
+ */
+export function paginateExact(
+  source: HTMLElement,
+  spacing: number,
+  type: number,
+  pageHeightPx: number = PAGE_BUDGET_PX,
+): Unit[][] {
+  const host = source.parentElement;
+  const pages = paginate(source, pageHeightPx);
+  if (!host) return pages; // 无处测量时退化为几何切页
+  for (let p = 0; p < pages.length; p++) {
+    let paper = buildPaper(pages[p], spacing, type);
+    host.appendChild(paper);
+    // 超高就回退尾单元；同时保持标题不落页尾。保留≥1个单元，避免死循环/空页。
+    while (
+      pages[p].length > 1 &&
+      (paper.getBoundingClientRect().height > pageHeightPx + EPS ||
+        (p < pages.length - 1 && pages[p][pages[p].length - 1].heading))
+    ) {
+      const moved = pages[p].pop();
+      if (!moved) break;
+      if (!pages[p + 1]) pages.push([]);
+      pages[p + 1].unshift(moved);
+      host.removeChild(paper);
+      paper = buildPaper(pages[p], spacing, type);
+      host.appendChild(paper);
+    }
+    host.removeChild(paper);
+  }
+  pullTrailingHeadings(pages);
   return pages;
 }
 

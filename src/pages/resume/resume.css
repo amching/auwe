@@ -101,6 +101,16 @@
 .resume-paper li::marker {
   color: var(--paper-ink-muted);
 }
+/*
+ * 页克隆（预览页框 / 打印分页盒）里首元素的 margin-top 归零。
+ * 分页引擎量的纸高不含首外边距（margin 穿透 .resume-paper 折叠到外层）；渲染时这条 margin 却会把
+ * 整张纸往下推 1~2mm——纸被切满（智能一页贴边）时最后一个块就被挤出页外（打印多出近空白尾页）。
+ * 归零后渲染与测量口径一致。连续源不受影响（选择器只匹配页克隆容器）。
+ */
+.resume-page .resume-paper > :first-child,
+.resume-print-page .resume-paper > :first-child {
+  margin-top: 0;
+}
 .resume-paper a {
   color: var(--paper-ink);
   text-decoration: underline;
@@ -158,6 +168,39 @@
 /* 屏幕上 #print-root 不可见；仅打印时显示 */
 #print-root {
   display: none;
+}
+/*
+ * 打印分页盒：usePrintResume 把预览已分好的每个页框（.resume-paper）各装进一个
+ * .resume-print-page，仅 break-after:page——每盒占一张物理页，打印断点与预览逐页一致
+ * （不再让浏览器重新分页）。末盒不加 break-after，避免多出一张空白页。
+ * 仅打印生效（屏幕上整个 #print-root 隐藏）。
+ *
+ * 纸上的 transform: scale(0.9999) 是刻意的，不是废话：Chromium 打印分页排版会把每个行盒
+ * 高度取整到整数像素（实测每行 +0~2px），几十行累计一页能比屏幕排版高出 ~8%，页底最后
+ * 一两行会被挤出页外（智能一页贴边时必现「最后一行显示不完整」）。带 transform 的子树按
+ * 「原子/整体（monolithic）」方式输出：既沿用屏幕的小数几何（打印高度与预览逐像素一致），
+ * 又不可被分页拆开——单靠 break-after 分页就成立，无需给盒定高。实测的三个坑，改前必读：
+ *   1. 必须取 0.9999 而非 1：恒等矩阵会被打印管线当作「无 transform」优化掉、重新逐行取整。
+ *      0.9999 全页累计仅缩 0.03mm，肉眼不可辨。
+ *   2. 盒上**不能加 height / overflow:hidden**：定高盒（尤其恰好一页高、或配 overflow:hidden）
+ *      会把盒卷进分页容器的重排，transform 的原子性失效，行高取整回来了，内容还可能被
+ *      拆页或裁掉。盒保持 auto 高（= 纸的布局高 < 一页），完全不进分页边界，才稳。
+ *   3. 只能用 2D scale：3D（如 translateZ）会把文字栅格化成位图。
+ * 文字仍是矢量可选中（验证过：PDF 内仍是文本算子 + 内嵌字体子集，不是位图）。
+ */
+@media print {
+  .resume-print-page {
+    break-after: page;
+    page-break-after: always; /* 旧引擎兼容 */
+  }
+  .resume-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+  .resume-print-page > .resume-paper {
+    transform: scale(0.9999);
+    transform-origin: top left;
+  }
 }
 @media print {
   html,
