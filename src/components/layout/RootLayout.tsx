@@ -1,6 +1,6 @@
 import { SettingsIcon } from "lucide-react";
 import { Suspense } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,11 +25,28 @@ export function RootLayout() {
       {/* App shell header：56px、半透明 canvas 底 + 发丝下边、三栏 grid（导航真居中）。 */}
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur-md">
         <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
-          {/* 左：品牌 + 副标题（细竖线分隔） */}
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="font-heading text-ui font-semibold tracking-tight text-foreground">
-              auwe
-            </span>
+          {/* 左：品牌 wordmark（发丝框胶囊，回首页）+ 副标题（细竖线分隔）。
+              胶囊与导航激活态反向签名：描边无填充无 rounded-md，避免读作 tab/按钮。
+              尾字距用 -mr 抵消（letter-spacing 加在字符后，末字母拖空尾会光学偏左）；
+              间隔号 aria-hidden，可访问名保持 auwe。 */}
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              to="/"
+              aria-label="auwe — 回到首页"
+              className="inline-flex h-6 shrink-0 items-center rounded-full border border-border-strong px-2.5 font-heading text-ui-sm font-[550] leading-none tracking-[0.08em] text-foreground outline-none transition-colors hover:border-foreground/25 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <span className="-mr-[0.08em]">
+                A
+                <span aria-hidden className="mx-[0.04em] text-muted-foreground">
+                  ·
+                </span>
+                U
+                <span aria-hidden className="mx-[0.04em] text-muted-foreground">
+                  ·
+                </span>
+                WE
+              </span>
+            </Link>
             <span
               aria-hidden
               className="h-3.5 w-px shrink-0 bg-border-strong"
