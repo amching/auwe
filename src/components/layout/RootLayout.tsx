@@ -46,7 +46,7 @@ export function RootLayout() {
               aria-label="auwe — 回到首页"
               className="inline-flex h-6 shrink-0 items-center rounded-full border border-border-strong px-2.5 font-heading text-ui-sm font-[550] leading-none tracking-[0.08em] text-foreground outline-none transition-colors hover:border-foreground/25 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50"
             >
-              <span className="-mr-[0.08em]">
+              <span className="mr-[-0.08em]">
                 A
                 <span aria-hidden className="mx-[0.04em] text-muted-foreground">
                   ·
