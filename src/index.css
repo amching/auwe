@@ -235,6 +235,36 @@
 }
 
 /*
+ * 不确定进度条：一段墨绿短条在轨道上往返滑动，表达「处理中」但不假装百分比。
+ * 克制、无闪烁；reduce-motion 下退化为半透明静止满条（仍表示忙碌，但不动）。
+ */
+.indeterminate-track {
+  position: relative;
+  overflow: hidden;
+}
+.indeterminate-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: var(--primary);
+  animation: indeterminate-slide 1.4s ease-in-out infinite;
+}
+@keyframes indeterminate-slide {
+  0% { left: -35%; width: 35%; }
+  50% { left: 40%; width: 45%; }
+  100% { left: 100%; width: 35%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .indeterminate-bar {
+    animation: none;
+    left: 0;
+    width: 100%;
+    opacity: 0.45;
+  }
+}
+
+/*
  * 副标题「站」⇄「栈」双关：同位叠放两字，缓慢交叉溶解（配轻微模糊做「化开→凝成」的 morph 感）。
  * 「工具站」（工具集散地）与「工具栈」（technical stack）来回切换。占位字撑宽避免抖动；尊重 reduce-motion。
  */
