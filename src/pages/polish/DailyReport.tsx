@@ -99,13 +99,7 @@ export function DailyReport() {
             />
 
             <div className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <span className="text-ui-sm font-medium">润色程度</span>
-                <span className="text-ui-sm text-muted-foreground">
-                  {level} ·{" "}
-                  {POLISH_LEVELS.find((m) => m.level === level)?.label}
-                </span>
-              </div>
+              <p className="text-ui-sm font-medium">润色程度</p>
               <PolishScale
                 value={level}
                 onChange={setLevel}

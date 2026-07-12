@@ -45,26 +45,25 @@ export function PolishScale({ value, onChange, disabled }: PolishScaleProps) {
   const fillPct = ((value - 1) / (POLISH_LEVELS.length - 1)) * 100;
 
   return (
-    <div>
-      <div
-        role="radiogroup"
-        aria-label="润色程度"
-        aria-orientation="horizontal"
-        onKeyDown={onKeyDown}
-        className={cn(
-          "relative flex items-center justify-between px-1",
-          disabled && "opacity-50",
-        )}
-      >
-        {/* 轨道底线 + 已达强度填充（绝对定位在圆点中心线上） */}
+    <div
+      role="radiogroup"
+      aria-label="润色程度"
+      aria-orientation="horizontal"
+      onKeyDown={onKeyDown}
+      className={cn(disabled && "opacity-50")}
+    >
+      {/* 轨道 + 圆点：五等分栅格，圆点中心即各列中心（首列 10%、尾列 90%） */}
+      <div className="relative grid grid-cols-5">
+        {/* 轨道底线：从第 1 点中心(10%)连到第 5 点中心(90%) */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-1 top-1/2 h-1 -translate-y-1/2 rounded-full bg-border"
+          className="pointer-events-none absolute top-1/2 right-[10%] left-[10%] h-1 -translate-y-1/2 rounded-full bg-border"
         />
+        {/* 已达强度填充 */}
         <span
           aria-hidden
-          className="pointer-events-none absolute top-1/2 left-1 h-1 -translate-y-1/2 rounded-full bg-primary transition-all"
-          style={{ width: `calc((100% - 0.5rem) * ${fillPct / 100})` }}
+          className="pointer-events-none absolute top-1/2 left-[10%] h-1 -translate-y-1/2 rounded-full bg-primary transition-all"
+          style={{ width: `calc(80% * ${fillPct / 100})` }}
         />
         {POLISH_LEVELS.map((meta) => {
           const active = meta.level === value;
@@ -83,7 +82,7 @@ export function PolishScale({ value, onChange, disabled }: PolishScaleProps) {
               tabIndex={active ? 0 : -1}
               disabled={disabled}
               onClick={() => onChange(meta.level)}
-              className="relative z-10 flex size-6 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed"
+              className="relative z-10 flex h-6 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed"
             >
               <span
                 className={cn(
@@ -100,10 +99,23 @@ export function PolishScale({ value, onChange, disabled }: PolishScaleProps) {
         })}
       </div>
 
-      {/* 两端锚点标签：左朴实 / 右浮夸，强化「从弱到强」的方向感 */}
-      <div className="mt-1.5 flex justify-between px-1 text-ui-xs text-faint">
-        <span>朴实</span>
-        <span>浮夸</span>
+      {/* 档位标签：与圆点同为五等分栅格，各自居中对齐；选中档加粗高亮 */}
+      <div className="mt-1.5 grid grid-cols-5 text-center text-ui-xs">
+        {POLISH_LEVELS.map((meta) => {
+          const active = meta.level === value;
+          return (
+            <span
+              key={meta.level}
+              aria-hidden
+              className={cn(
+                "transition-colors",
+                active ? "font-medium text-primary" : "text-faint",
+              )}
+            >
+              {meta.label}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
