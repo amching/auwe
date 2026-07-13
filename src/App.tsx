@@ -10,8 +10,14 @@ const ResumePage = lazy(() =>
 const PolishPage = lazy(() =>
   import("@/pages/polish/PolishPage").then((m) => ({ default: m.PolishPage })),
 );
+const ToolsLayout = lazy(() =>
+  import("@/pages/tools/ToolsLayout").then((m) => ({ default: m.ToolsLayout })),
+);
 const ToolsPage = lazy(() =>
   import("@/pages/tools/ToolsPage").then((m) => ({ default: m.ToolsPage })),
+);
+const ToolView = lazy(() =>
+  import("@/pages/tools/ToolView").then((m) => ({ default: m.ToolView })),
 );
 
 const router = createBrowserRouter([
@@ -21,7 +27,14 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <ResumePage /> },
       { path: "polish", element: <PolishPage /> },
-      { path: "tools", element: <ToolsPage /> },
+      {
+        path: "tools",
+        element: <ToolsLayout />,
+        children: [
+          { index: true, element: <ToolsPage /> },
+          { path: ":slug", element: <ToolView /> },
+        ],
+      },
     ],
   },
 ]);
