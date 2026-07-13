@@ -33,18 +33,30 @@ export function RootLayout() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      {/* App shell header：56px、半透明 canvas 底 + 发丝下边、三栏 grid（导航真居中）。 */}
+      {/* App shell header：半透明 canvas 底 + 发丝下边。
+          布局用 grid-template-areas 做响应式降级：
+          - 窄屏（< sm）两行：第一行「品牌 | 设置」，第二行「导航」通栏（可横向滚动）；
+          - 宽屏（≥ sm）单行三栏「品牌 | 导航 | 设置」。
+          侧轨道用 minmax(0,1fr) 允许收缩，让中间导航真正相对整个 Header 居中，
+          不受左右两侧宽度影响；px 用 clamp 平滑收窄。 */}
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur-md">
-        <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
+        <div
+          className={cn(
+            "grid items-center gap-x-4 gap-y-1.5 px-[clamp(1rem,4vw,1.5rem)] py-2.5",
+            "grid-cols-[minmax(0,1fr)_auto] [grid-template-areas:'brand_settings'_'nav_nav']",
+            "sm:h-14 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-y-0 sm:py-0 sm:[grid-template-areas:'brand_nav_settings']",
+          )}
+        >
           {/* 左：品牌 wordmark（发丝框胶囊，回首页）+ 副标题（细竖线分隔）。
               胶囊与导航激活态反向签名：描边无填充无 rounded-md，避免读作 tab/按钮。
               尾字距用 -mr 抵消（letter-spacing 加在字符后，末字母拖空尾会光学偏左）；
-              间隔号 aria-hidden，可访问名保持 auwe。 */}
-          <div className="flex min-w-0 items-center gap-3">
+              间隔号 aria-hidden，可访问名保持 auwe。
+              胶囊 shrink-0 + nowrap 保证「A·U·WE」永远完整；空间不足时副标题先 truncate。 */}
+          <div className="flex min-w-0 items-center gap-3 [grid-area:brand]">
             <Link
               to="/"
               aria-label="auwe — 回到首页"
-              className="inline-flex h-6 shrink-0 items-center rounded-full border border-border-strong px-2.5 font-heading text-ui-sm font-[550] leading-none tracking-[0.08em] text-foreground outline-none transition-colors hover:border-foreground/25 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded-full border border-border-strong px-2.5 font-heading text-ui-sm font-[550] leading-none tracking-[0.08em] text-foreground outline-none transition-colors hover:border-foreground/25 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               <span className="mr-[-0.08em]">
                 A
@@ -75,36 +87,42 @@ export function RootLayout() {
             </span>
           </div>
 
-          {/* 中：主导航（segmented；激活态 = subtle 填充 + radius，非普通按钮） */}
-          <nav className="flex items-center gap-0.5 justify-self-center">
-            {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    "rounded-md px-2.5 py-1.5 text-ui-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
-                    isActive
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
+          {/* 中：主导航（segmented；激活态 = subtle 填充 + radius，非普通按钮）。
+              窄屏通栏，导航项相对整个 Header 居中（内层 mx-auto w-max）：
+              能容纳时 auto 边距居中，超宽时边距归零、从左起可横向滚动（隐藏滚动条），
+              避免「居中 + overflow」下左侧被裁且滚不到的坑；导航项 shrink-0 + nowrap 不压缩不换行。 */}
+          <nav className="no-scrollbar overflow-x-auto justify-self-stretch [grid-area:nav] sm:justify-self-center">
+            <div className="mx-auto flex w-max items-center gap-0.5 sm:mx-0">
+              {NAV.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    cn(
+                      "shrink-0 whitespace-nowrap rounded-md px-2.5 py-1.5 text-ui-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
+                      isActive
+                        ? "bg-secondary text-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           </nav>
 
-          {/* 右：设置（安静的齿轮 icon button，不再是孤立的描边按钮） */}
-          <div className="flex items-center gap-1 justify-self-end">
+          {/* 右：设置（安静的齿轮 icon button，不再是孤立的描边按钮）。
+              视觉 28px 不变，after:-inset-2 透明伪元素把可点击区扩到 ≥44px。 */}
+          <div className="flex items-center gap-1 justify-self-end [grid-area:settings]">
             <SettingsDialog
               trigger={
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   aria-label="设置"
-                  className="text-muted-foreground"
+                  className="relative text-muted-foreground after:absolute after:-inset-2 after:content-['']"
                 >
                   <SettingsIcon />
                 </Button>

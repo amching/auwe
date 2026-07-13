@@ -235,6 +235,17 @@
 }
 
 /*
+ * 隐藏滚动条但保留滚动能力（触摸板 / 触屏）——用于 Header 窄屏的横向滚动导航。
+ */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* 旧 Edge/IE */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/*
  * 不确定进度条：一段墨绿短条在轨道上往返滑动，表达「处理中」但不假装百分比。
  * 克制、无闪烁；reduce-motion 下退化为半透明静止满条（仍表示忙碌，但不动）。
  */
