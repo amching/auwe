@@ -87,7 +87,7 @@ function ZoneRow({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="w-56 shrink-0">{label}</div>
+      <div className="w-full shrink-0 sm:w-56">{label}</div>
       <div className="min-w-0 flex-1 font-mono text-ui tabular-nums">
         {timeText || <span className="text-faint">—</span>}
       </div>
@@ -110,7 +110,10 @@ export function TimestampTool() {
   }, []);
 
   // —— 时间戳 → 日期时间 ——
-  const [tsInput, setTsInput] = useState("");
+  // 默认预填当前秒级时间戳：进页面即有真实结果，消除空态、并与顶部呼应。
+  const [tsInput, setTsInput] = useState(() =>
+    String(Math.floor(Date.now() / 1000)),
+  );
   const forward = useMemo(() => {
     const raw = tsInput.trim();
     if (!raw) return { state: "empty" as const };
@@ -146,7 +149,10 @@ export function TimestampTool() {
   }
 
   // —— 日期时间 → 时间戳 ——
-  const [dtInput, setDtInput] = useState("");
+  // 默认预填「当前北京时间」：反向区一进来也有结果，与正向一致、无空态。
+  const [dtInput, setDtInput] = useState(() =>
+    formatInTimeZone(Date.now(), BEIJING),
+  );
   const [revZone, setRevZone] = useState(BEIJING);
   const reverse = useMemo(() => {
     const raw = dtInput.trim();
@@ -224,10 +230,15 @@ export function TimestampTool() {
         </div>
 
         <div className="mt-2 space-y-1.5">
-          {/* 北京时间行：始终存在、不可删，右侧为添加按钮 */}
+          {/* 列提示（桌面列对齐时显示；移动端堆叠时隐藏） */}
+          <div className="hidden items-center gap-2 px-0.5 text-ui-xs text-faint sm:flex">
+            <div className="w-56 shrink-0">时区</div>
+            <div className="flex-1">当地时间</div>
+          </div>
+          {/* 北京时间行：固定、不可删——用只读 chip 与可编辑选择器区分；右侧为添加按钮 */}
           <ZoneRow
             label={
-              <span className="flex h-8 items-center text-ui font-medium">
+              <span className="flex h-8 items-center rounded-md bg-muted px-2.5 text-ui font-medium text-muted-foreground">
                 北京时间
               </span>
             }
@@ -240,6 +251,7 @@ export function TimestampTool() {
                 variant="ghost"
                 size="icon-sm"
                 aria-label="添加时区"
+                title="添加时区"
                 onClick={addRow}
               >
                 <PlusIcon />
@@ -271,6 +283,7 @@ export function TimestampTool() {
                   variant="ghost"
                   size="icon-sm"
                   aria-label={`删除 ${row.zone}`}
+                  title="删除此行"
                   onClick={() =>
                     setExtraRows((rows) => rows.filter((r) => r.id !== row.id))
                   }

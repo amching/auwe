@@ -56,6 +56,17 @@ export function TimeZoneSelect({
         if (typeof next === "string") onValueChange(next);
       }}
       itemToStringLabel={(zone) => String(zone)}
+      // 打开时把已选时区滚动到可视中部（否则长列表总是从顶部开始）。
+      onOpenChange={(open) => {
+        if (!open) return;
+        requestAnimationFrame(() => {
+          document
+            .querySelector(
+              '[data-slot="combobox-content"] [data-slot="combobox-item"][data-selected]',
+            )
+            ?.scrollIntoView({ block: "center" });
+        });
+      }}
       // 归一化 `/` `_` 与空格，让「new york」也能匹配「America/New_York」。
       filter={(zone, query) => {
         const q = query
