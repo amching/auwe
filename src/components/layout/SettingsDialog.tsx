@@ -11,12 +11,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTrial } from "@/lib/llm/trial";
 import { useSettings } from "@/stores/settings";
 
 export function SettingsDialog({ trigger }: { trigger?: React.ReactElement }) {
   const { endpoint, apiKey, model, setSettings } = useSettings();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ endpoint, apiKey, model });
+  // 试用通道信息只用于展示；不主动探测（打开设置的入口页已探测过）。
+  const trialReady = useTrial((s) => s.status === "available");
+  const trialProvider = useTrial((s) => s.provider);
+  const trialModel = useTrial((s) => s.model);
 
   function save() {
     setSettings(form);
@@ -41,6 +46,8 @@ export function SettingsDialog({ trigger }: { trigger?: React.ReactElement }) {
           <DialogDescription className="leading-relaxed">
             填入你自己的 OpenAI 兼容 Endpoint 与 API
             Key。这些值只保存在你的浏览器本地，绝不上传。
+            {trialReady &&
+              `留空则自动使用官方试用通道（${trialProvider ?? "官方"} · ${trialModel}），共享额度仅供体验。`}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">

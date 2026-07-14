@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { streamCompletion } from "@/lib/llm/client";
+import { describeLlmError } from "@/lib/llm/errors";
+import { resolveLlm } from "@/lib/llm/trial";
 import { useResume } from "@/stores/resume";
-import { useSettings } from "@/stores/settings";
 import { buildResumeAiPrompt, extractSuggestion } from "./prompts";
 
 /**
@@ -107,11 +108,13 @@ export const useResumeAi = create<ResumeAiState>()((set, get) => ({
     const { target, status, suggestion } = get();
     if (!target || status === "streaming") return;
 
-    const { endpoint, apiKey, model } = useSettings.getState();
-    if (!(endpoint && apiKey && model)) {
+    // BYOK 优先，否则回退官方试用通道（配置解析见 lib/llm/trial.ts）。
+    const resolved = resolveLlm();
+    if (!resolved) {
       set({
         status: "error",
-        error: "还没配置 AI，请先在设置里填入 Endpoint、API Key 和 Model。",
+        error:
+          "还没配置 AI，且试用通道不可用。请在设置里填入 Endpoint、API Key 和 Model。",
       });
       return;
     }
@@ -135,11 +138,9 @@ export const useResumeAi = create<ResumeAiState>()((set, get) => ({
     });
     try {
       let acc = "";
-      for await (const chunk of streamCompletion(
-        { endpoint, apiKey, model },
-        prompt,
-        { signal },
-      )) {
+      for await (const chunk of streamCompletion(resolved.config, prompt, {
+        signal,
+      })) {
         acc += chunk;
         // 边流边提取：模型若回显 prompt 脚手架，这里就不会显示成建议正文。
         set({ suggestion: extractSuggestion(acc) });
@@ -148,7 +149,8 @@ export const useResumeAi = create<ResumeAiState>()((set, get) => ({
       if (!clean.trim()) {
         set({
           status: "error",
-          error: "模型没有返回任何内容，请重试或换个说法。",
+          // 与接口层错误（describeLlmError）区分：接口是通的，是内容出了问题。
+          error: "接口调用成功，但模型没有返回有效内容，请重试或换个说法。",
           rounds: get().rounds.slice(0, -1),
         });
         return;
@@ -172,7 +174,7 @@ export const useResumeAi = create<ResumeAiState>()((set, get) => ({
       }
       set({
         status: "error",
-        error: err instanceof Error ? err.message : String(err),
+        error: describeLlmError(err, { trial: resolved.trial }),
         rounds: get().rounds.slice(0, -1),
       });
     } finally {

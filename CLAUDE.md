@@ -10,7 +10,8 @@
 
 - **纯客户端 BYOK**：LLM 调用**从浏览器直接发出**，API_KEY 只存在用户本地（localStorage），永不上送到我们的服务器。这是隐私卖点，不要引入需要托管密钥的后端。
 - 无传统后端、无数据库、无 SEO 需求 → 静态部署（Cloudflare Pages / Vercel）。
-- 需要服务端能力时，只用 edge function（目前唯一预期用途是 CORS 代理，见下）。
+- 需要服务端能力时，只用 edge function。现有用途：**官方试用通道代理**（`functions/api/trial/`，用户没配 BYOK 时兜底）；预留用途：CORS 代理（见下）。
+- **试用通道**：试用的 endpoint/key/model 全部存在 Cloudflare 环境变量（`TRIAL_ENDPOINT` / `TRIAL_API_KEY` / `TRIAL_MODEL` / 可选 `TRIAL_PROVIDER`），前端只知道同源路径 `/api/trial`。**任何托管密钥都不得进前端 bundle**——「内嵌但不显示」不算隐藏，DevTools 一眼可见。配置解析统一走 `src/lib/llm/trial.ts` 的 `resolveLlm()`（BYOK 优先，试用兜底）；本地 `pnpm dev` 没有 edge function，试用通道自然探测为不可用。
 
 ## 技术栈（约定，勿擅自更换）
 
@@ -39,6 +40,8 @@
 ## 目录约定
 
 ```
+functions/
+  api/trial/[[path]].ts          # Cloudflare Pages Function：试用通道代理（GET 探测 / POST chat/completions 流式透传；model 服务端钉死 + max_tokens 封顶）
 src/
   main.tsx                       # 挂载 <App/>（StrictMode + createRoot）
   App.tsx                        # createBrowserRouter：根布局 + 三路由（页面级 lazy code-split）
@@ -83,6 +86,8 @@ src/
   lib/
     llm/client.ts                # streamCompletion：createOpenAI + streamText 流式封装
     llm/types.ts
+    llm/trial.ts                 # 试用通道：探测 /api/trial（useTrialChannel）+ resolveLlm()（BYOK 优先，试用兜底）
+    llm/errors.ts                # describeLlmError：LLM 异常 → 可行动中文（接口层失败 vs 内容为空要分清；纯逻辑有测试）
     markdown/sanitize.ts         # 共享 rehype-sanitize schema
     markdown/MarkdownPreview.tsx # 唯一的 Markdown 渲染入口（已内置 sanitize）
     utils.ts                     # shadcn 的 cn()

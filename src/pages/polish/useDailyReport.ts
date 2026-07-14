@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { streamCompletion } from "@/lib/llm/client";
-import { useSettings } from "@/stores/settings";
+import { describeLlmError } from "@/lib/llm/errors";
+import { resolveLlm } from "@/lib/llm/trial";
 import { buildDailyReportPrompt, type PolishLevel } from "./prompts";
 
 /** 生成结果时所依据的输入 + 等级快照，用于判断结果是否已过期。 */
@@ -44,7 +45,6 @@ export function isReportStale(
  * 走同一个 generate()。
  */
 export function useDailyReport() {
-  const { endpoint, apiKey, model } = useSettings();
   /** 最近一次成功提交的正文；重新生成期间不清空，成功后才被替换。 */
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState<ReportStatus>("idle");
@@ -59,6 +59,16 @@ export function useDailyReport() {
     async (input: string, level: PolishLevel) => {
       if (inFlight.current) return;
       inFlight.current = true;
+      // BYOK 优先，否则回退官方试用通道（配置解析见 lib/llm/trial.ts）。
+      const resolved = resolveLlm();
+      if (!resolved) {
+        setError(
+          "还没配置 AI，且试用通道不可用。请在设置里填入 Endpoint、API Key 和 Model。",
+        );
+        setStatus("error");
+        inFlight.current = false;
+        return;
+      }
       // 有旧结果 → 重新生成（保留旧结果）；否则首次生成（骨架屏）。
       const regenerating = output.trim() !== "";
       setStatus(regenerating ? "regenerating" : "generating");
@@ -68,15 +78,15 @@ export function useDailyReport() {
         const prompt = buildDailyReportPrompt(input, level);
         // 累加到本地变量，成功前不改动 output —— 首次显示骨架、重新生成保留旧文。
         let acc = "";
-        for await (const chunk of streamCompletion(
-          { endpoint, apiKey, model },
-          prompt,
-        )) {
+        for await (const chunk of streamCompletion(resolved.config, prompt)) {
           acc += chunk;
         }
         // LLM 返回空内容按异常处理，而不是留下一个空结果假装成功。
+        // 文案与接口层错误（describeLlmError）区分：接口是通的，是内容出了问题。
         if (!acc.trim()) {
-          setError("模型没有返回任何内容，请重试或稍微补充一下输入。");
+          setError(
+            "接口调用成功，但模型没有返回任何内容，请重试或稍微补充一下输入。",
+          );
           setStatus("error");
           return;
         }
@@ -85,14 +95,14 @@ export function useDailyReport() {
         setStatus("success");
       } catch (err) {
         // 失败不清空 output：重新生成失败时旧结果原样保留。
-        setError(err instanceof Error ? err.message : String(err));
+        setError(describeLlmError(err, { trial: resolved.trial }));
         setStatus("error");
       } finally {
         inFlight.current = false;
         setPendingLevel(null);
       }
     },
-    [endpoint, apiKey, model, output],
+    [output],
   );
 
   return { output, status, error, snapshot, pendingLevel, generate };

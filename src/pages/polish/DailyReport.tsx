@@ -1,9 +1,17 @@
-import { Check, Copy, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  TriangleAlert,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useTrialChannel } from "@/lib/llm/trial";
 import { MarkdownPreview } from "@/lib/markdown/MarkdownPreview";
 import { useSettings } from "@/stores/settings";
 import { PolishScale } from "./PolishScale";
@@ -17,7 +25,12 @@ const PLACEHOLDER = `例如：
 - 新接口还没完成，功能暂未上线`;
 
 export function DailyReport() {
-  const { isConfigured } = useSettings();
+  const configured = useSettings((s) =>
+    Boolean(s.endpoint && s.apiKey && s.model),
+  );
+  // 未配置 BYOK 时探测官方试用通道，可用则功能照常开放。
+  const trial = useTrialChannel(!configured);
+  const llmReady = configured || trial.status === "available";
   const [input, setInput] = useState("");
   const [level, setLevel] = useState<PolishLevel>(3);
   const [copied, setCopied] = useState(false);
@@ -28,7 +41,7 @@ export function DailyReport() {
 
   const isBusy = status === "generating" || status === "regenerating";
   const hasInput = Boolean(input.trim());
-  const canGenerate = hasInput && isConfigured() && !isBusy;
+  const canGenerate = hasInput && llmReady && !isBusy;
   const stale = !isBusy && isReportStale(snapshot, input, level);
   const currentHint = POLISH_LEVELS.find((m) => m.level === level)?.hint;
   // loading 文案用「正在生成时」的等级；结果副标题用「已生成结果」的等级。
@@ -65,7 +78,24 @@ export function DailyReport() {
 
   return (
     <div className="space-y-4">
-      {!isConfigured() && (
+      {!configured && trial.status === "available" && (
+        <div className="rounded-md border border-dashed p-3 text-ui-sm text-muted-foreground">
+          <Sparkles aria-hidden className="mr-1 inline size-3 align-[-1px]" />
+          试用模式：由官方提供的 {trial.provider ?? "官方通道"} · {trial.model}
+          {" 驱动，共享额度仅供体验。也可在"}
+          <span className="mx-1">
+            <SettingsDialog
+              trigger={
+                <Button variant="link" className="h-auto p-0">
+                  设置
+                </Button>
+              }
+            />
+          </span>
+          里填入自己的 API Key。
+        </div>
+      )}
+      {!configured && trial.status === "unavailable" && (
         <div className="rounded-md border border-dashed p-3 text-ui-sm text-muted-foreground">
           还没配置 AI。请先在
           <span className="mx-1">

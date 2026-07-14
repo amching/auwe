@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useTrialChannel } from "@/lib/llm/trial";
 import { cn } from "@/lib/utils";
 import { useResume } from "@/stores/resume";
 import { useSettings } from "@/stores/settings";
@@ -43,6 +44,9 @@ export function AiPanel({ onReselect }: AiPanelProps) {
   const configured = useSettings((s) =>
     Boolean(s.endpoint && s.apiKey && s.model),
   );
+  // 未配置 BYOK 时探测官方试用通道，可用则功能照常开放。
+  const trial = useTrialChannel(!configured);
+  const llmReady = configured || trial.status === "available";
   // 应用后正文又被手动改过 → 无法安全撤销。
   const markdown = useResume((s) => s.markdown);
   const canUndo = lastApplied !== null && markdown === lastApplied.after;
@@ -52,7 +56,7 @@ export function AiPanel({ onReselect }: AiPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const streaming = status === "streaming";
-  const canSend = Boolean(target) && !streaming && configured;
+  const canSend = Boolean(target) && !streaming && llmReady;
 
   // 流式输出时跟随滚动到底部。
   useEffect(() => {
@@ -90,7 +94,26 @@ export function AiPanel({ onReselect }: AiPanelProps) {
         ref={scrollRef}
         className="scroll-subtle min-h-0 flex-1 space-y-3 overflow-y-auto p-3"
       >
-        {!configured && (
+        {!configured && trial.status === "available" && (
+          <div className="rounded-md border border-dashed p-2.5 text-ui-sm text-muted-foreground">
+            <SparklesIcon
+              aria-hidden
+              className="mr-1 inline size-3 align-[-1px]"
+            />
+            试用模式：由官方提供的 {trial.provider ?? "官方通道"} ·{" "}
+            {trial.model}
+            {" 驱动，共享额度仅供体验。也可在"}
+            <SettingsDialog
+              trigger={
+                <Button variant="link" className="mx-0.5 h-auto p-0 text-ui-sm">
+                  设置
+                </Button>
+              }
+            />
+            里填入自己的 API Key。
+          </div>
+        )}
+        {!configured && trial.status === "unavailable" && (
           <div className="rounded-md border border-dashed p-2.5 text-ui-sm text-muted-foreground">
             还没配置 AI。请先在
             <SettingsDialog
