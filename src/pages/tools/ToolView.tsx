@@ -1,6 +1,7 @@
 import { ArrowLeftIcon } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { getTool } from "./registry";
 
 /** 工具专注视图：返回 + 标题 + 工具本体。未知 slug 回退到网格。 */
@@ -11,7 +12,12 @@ export function ToolView() {
 
   const { Icon, Component } = tool;
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-8">
+    <section
+      className={cn(
+        "mx-auto w-full px-4 py-8",
+        tool.wide ? "max-w-[96rem]" : "max-w-3xl",
+      )}
+    >
       <div className="mb-6 flex items-center gap-3">
         <Button
           variant="outline"

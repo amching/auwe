@@ -1,6 +1,11 @@
-import { ClockIcon, type LucideIcon } from "lucide-react";
-import type { ComponentType } from "react";
+import { BracesIcon, ClockIcon, type LucideIcon } from "lucide-react";
+import { type ComponentType, lazy } from "react";
 import { TimestampTool } from "./timestamp/TimestampTool";
+
+// JSON 工具拖着 CodeMirror（大依赖），懒加载避免拖累工具网格/命令面板首屏。
+const JsonTool = lazy(() =>
+  import("./json/JsonTool").then((m) => ({ default: m.JsonTool })),
+);
 
 export type ToolCategory = "开发者" | "设计师" | "内容";
 
@@ -16,6 +21,8 @@ export interface ToolMeta {
   Icon: LucideIcon;
   /** 专注视图里渲染的工具本体 */
   Component: ComponentType;
+  /** 需要宽幅工作区的工具（如双栏编辑器）；专注视图放宽容器。 */
+  wide?: boolean;
 }
 
 /** 分类（按受众）展示顺序（网格分组/未来用）。 */
@@ -34,6 +41,27 @@ export const TOOLS: ToolMeta[] = [
     keywords: ["timestamp", "unix", "epoch", "时间", "日期"],
     Icon: ClockIcon,
     Component: TimestampTool,
+  },
+  {
+    slug: "json",
+    name: "JSON 格式化 / 查看",
+    category: "开发者",
+    description: "格式化、压缩、容错修复、树视图浏览与搜索，大文档依然流畅。",
+    keywords: [
+      "json",
+      "format",
+      "formatter",
+      "minify",
+      "viewer",
+      "repair",
+      "格式化",
+      "压缩",
+      "美化",
+      "修复",
+    ],
+    Icon: BracesIcon,
+    Component: JsonTool,
+    wide: true,
   },
 ];
 

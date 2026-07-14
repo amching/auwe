@@ -60,7 +60,13 @@ src/
       templates.css              # 模板样式：每模板一个 [data-resume-template] 块（--paper-* token + 作用域版式细则）
       sampleResume.ts            # 内置示例简历内容（Markdown）
     polish/PolishPage.tsx        # 文风（已跑通的流式润色竖切片）
-    tools/ToolsPage.tsx          # 工具（占位）
+    tools/
+      registry.ts                # 工具注册表：单一事实源（网格/⌘K 面板/路由都读它；新工具往这里加）
+      ToolsLayout.tsx            # 工具区外壳：⌘K 命令面板 + 子路由
+      ToolsPage.tsx              # 工具网格首页
+      ToolView.tsx               # 工具专注视图 /tools/:slug（wide 工具放宽容器）
+      timestamp/                 # 时间戳 ⇄ 日期时间（多时区）
+      json/                      # JSON 格式化/查看：CodeMirror 源码编辑 + 虚拟化树视图 + 搜索过滤 + jsonrepair 容错解析（model/parse 纯逻辑有测试）
   lib/
     llm/client.ts                # streamCompletion：createOpenAI + streamText 流式封装
     llm/types.ts
