@@ -1,5 +1,6 @@
 import { EditorView, type ViewUpdate } from "@uiw/react-codemirror";
 import {
+  BookOpenIcon,
   CheckIcon,
   ChevronDownIcon,
   FileTextIcon,
@@ -41,6 +42,7 @@ import {
 } from "./ai/scope";
 import { useResumeAi } from "./ai/store";
 import { exportBaseName } from "./exportName";
+import { FormatGuideDialog } from "./FormatGuideDialog";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { type ResumeLayoutInfo, ResumePreview } from "./ResumePreview";
 import { getResumeTemplate, RESUME_TEMPLATES } from "./templates";
@@ -441,6 +443,19 @@ function EditorPanelHeader({
         Markdown
       </Badge>
 
+      {/* 格式指南：随时可查的参考弹窗，只由这里主动打开，无任何首次引导。 */}
+      <FormatGuideDialog
+        trigger={
+          <button
+            type="button"
+            className="ml-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-ui-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <BookOpenIcon aria-hidden className="size-3" />
+            格式指南
+          </button>
+        }
+      />
+
       {/* 有选区 → 直接对选区发起；无选区 → 弹出范围选择。 */}
       <DropdownMenu
         open={menuOpen}
@@ -457,7 +472,7 @@ function EditorPanelHeader({
             <button
               type="button"
               disabled={aiDisabled}
-              className="ml-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-ui-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-40"
+              className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-ui-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-40"
             >
               <SparklesIcon aria-hidden className="size-3" />
               AI 优化

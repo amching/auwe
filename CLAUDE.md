@@ -58,7 +58,8 @@ src/
       resume.css                 # 简历纸排版(.resume-paper) + 页框 + @page/@media print（模板共用）
       templates.ts               # 视觉模板注册表（id/label：clean / color）
       templates.css              # 模板样式：每模板一个 [data-resume-template] 块（--paper-* token + 作用域版式细则）
-      sampleResume.ts            # 内置示例简历内容（Markdown）
+      sampleResume.ts            # 默认模板 + 完整示例 + 旧教学注释迁移指纹（stripLegacyTutorialComment）
+      FormatGuideDialog.tsx      # 格式指南弹窗（4 条约定 + 完整示例双视图）；教程属 UI，不进简历正文
       ai/                        # AI 优化：选区/段落/章节/全文 → 流式建议 → 编辑器内 Diff 审阅 → 接受才写回
         store.ts                 # 会话状态机（zustand 非持久化）：idle/streaming/reviewing/applied；apply() 是唯一写回 useResume 的路径
         diff.ts                  # token 级 LCS diff（中文按字、英文按词；纯逻辑有测试）
