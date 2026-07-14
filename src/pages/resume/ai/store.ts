@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { streamCompletion } from "@/lib/llm/client";
 import { useResume } from "@/stores/resume";
 import { useSettings } from "@/stores/settings";
-import { buildResumeAiPrompt, stripCodeFence } from "./prompts";
+import { buildResumeAiPrompt, extractSuggestion } from "./prompts";
 
 /**
  * 简历 AI 优化会话（不持久化：范围偏移与 Markdown 强绑定，跨会话没有意义）。
@@ -141,9 +141,10 @@ export const useResumeAi = create<ResumeAiState>()((set, get) => ({
         { signal },
       )) {
         acc += chunk;
-        set({ suggestion: acc });
+        // 边流边提取：模型若回显 prompt 脚手架，这里就不会显示成建议正文。
+        set({ suggestion: extractSuggestion(acc) });
       }
-      const clean = stripCodeFence(acc);
+      const clean = extractSuggestion(acc);
       if (!clean.trim()) {
         set({
           status: "error",
