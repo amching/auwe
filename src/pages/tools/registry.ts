@@ -1,10 +1,18 @@
-import { BracesIcon, ClockIcon, type LucideIcon } from "lucide-react";
+import {
+  BracesIcon,
+  ClockIcon,
+  Code2Icon,
+  type LucideIcon,
+} from "lucide-react";
 import { type ComponentType, lazy } from "react";
 import { TimestampTool } from "./timestamp/TimestampTool";
 
-// JSON 工具拖着 CodeMirror（大依赖），懒加载避免拖累工具网格/命令面板首屏。
+// JSON / 类型生成工具拖着 CodeMirror（大依赖），懒加载避免拖累工具网格/命令面板首屏。
 const JsonTool = lazy(() =>
   import("./json/JsonTool").then((m) => ({ default: m.JsonTool })),
+);
+const TypegenTool = lazy(() =>
+  import("./typegen/TypegenTool").then((m) => ({ default: m.TypegenTool })),
 );
 
 export type ToolCategory = "开发者" | "设计师" | "内容";
@@ -61,6 +69,31 @@ export const TOOLS: ToolMeta[] = [
     ],
     Icon: BracesIcon,
     Component: JsonTool,
+    wide: true,
+  },
+  {
+    slug: "typegen",
+    name: "类型定义生成",
+    category: "开发者",
+    description:
+      "JSON / YAML / TOML / CSV 秒变 TypeScript、Go、Rust 类型定义。",
+    keywords: [
+      "json to typescript",
+      "interface",
+      "struct",
+      "serde",
+      "quicktype",
+      "go",
+      "rust",
+      "yaml",
+      "toml",
+      "csv",
+      "类型",
+      "结构体",
+      "转换",
+    ],
+    Icon: Code2Icon,
+    Component: TypegenTool,
     wide: true,
   },
 ];

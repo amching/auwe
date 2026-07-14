@@ -65,8 +65,12 @@ src/
       ToolsLayout.tsx            # 工具区外壳：⌘K 命令面板 + 子路由
       ToolsPage.tsx              # 工具网格首页
       ToolView.tsx               # 工具专注视图 /tools/:slug（wide 工具放宽容器）
+      Segmented.tsx              # 工具区共享的分段单选控件
+      ToolbarSelect.tsx          # 工具区共享的工具条紧凑下拉单选（只显示当前选中项）
+      cmTheme.ts                 # 工具区共享的 CodeMirror 主题 + 通用代码高亮
       timestamp/                 # 时间戳 ⇄ 日期时间（多时区）
       json/                      # JSON 格式化/查看：CodeMirror 源码编辑 + 虚拟化树视图 + 搜索过滤 + jsonrepair 容错解析（model/parse 纯逻辑有测试）
+      typegen/                   # 类型定义生成：JSON/YAML/TOML/CSV → TS/Go/Rust（parseInput/infer/emit 纯逻辑有测试；Go json tag/omitempty/指针、Rust serde 可配）
   lib/
     llm/client.ts                # streamCompletion：createOpenAI + streamText 流式封装
     llm/types.ts
