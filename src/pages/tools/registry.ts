@@ -33,9 +33,6 @@ export interface ToolMeta {
   wide?: boolean;
 }
 
-/** 分类（按受众）展示顺序（网格分组/未来用）。 */
-export const CATEGORIES: ToolCategory[] = ["开发者", "设计师", "内容"];
-
 /**
  * 工具注册表——单一事实源：网格、命令面板、路由 /tools/:slug 都读它。
  * 新增一个工具 = 往这里加一条（含 Component），页面/面板/路由自动生长。

@@ -25,9 +25,8 @@ export const PAGE_CONTENT_PX = (297 - 14 * 2) * MM_TO_PX;
 export const PAGE_BUDGET_PX = PAGE_CONTENT_PX - 2 * MM_TO_PX;
 /** A4 内容宽：210 − 左右页边距 16mm 各一。源与页框都用它，保证折行一致。 */
 export const CONTENT_WIDTH_PX = (210 - 16 * 2) * MM_TO_PX;
-/** A4 整页尺寸（含页边距），用于页框。 */
+/** A4 整页宽（含页边距），用于页框。 */
 export const PAGE_WIDTH_PX = 210 * MM_TO_PX;
-export const PAGE_HEIGHT_PX = 297 * MM_TO_PX;
 
 const EPS = 1;
 const HEADING = /^H[1-3]$/;
