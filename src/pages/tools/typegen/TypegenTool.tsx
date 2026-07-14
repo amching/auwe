@@ -1,6 +1,5 @@
 import { CheckIcon, Code2Icon, CopyIcon, Settings2Icon } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -8,8 +7,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { Segmented } from "../Segmented";
-import { ToolbarSelect } from "../ToolbarSelect";
+import {
+  ToolbarSelect,
+  toolbarCellClass,
+  toolbarChipClass,
+} from "../ToolbarSelect";
 import {
   DEFAULT_EMIT_OPTIONS,
   type EmitOptions,
@@ -67,16 +71,16 @@ function EmitOptionsPopover({
     <Popover>
       <PopoverTrigger
         render={
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full"
-            aria-label="生成选项"
-            title="生成选项"
+            aria-label="类型生成设置"
+            title="类型生成设置"
+            className={toolbarCellClass}
           >
-            <Settings2Icon />
-          </Button>
+            <span className={cn(toolbarChipClass, "w-7 px-0")}>
+              <Settings2Icon className="size-4" />
+            </span>
+          </button>
         }
       />
       <PopoverContent
@@ -205,7 +209,7 @@ export function TypegenTool() {
       {/* 左：源数据编辑 */}
       <div className="relative min-h-0 min-w-0 flex-1 basis-0 border-b md:border-r md:border-b-0">
         <InputEditor value={doc} onChange={setDoc} format={format} />
-        <div className="absolute right-3 bottom-3 z-10 rounded-full border bg-card/95 p-1 shadow-command backdrop-blur">
+        <div className="absolute right-3 bottom-3 z-10 flex rounded-panel border bg-card shadow-command">
           <ToolbarSelect<InputFormat>
             value={format}
             onChange={setFormat}
@@ -238,14 +242,13 @@ export function TypegenTool() {
           </div>
         )}
 
-        <div className="absolute right-3 bottom-3 z-10 flex items-center gap-1 rounded-full border bg-card/95 p-1 shadow-command backdrop-blur">
+        <div className="absolute right-3 bottom-3 z-10 flex items-stretch divide-x divide-border rounded-panel border bg-card shadow-command">
           <ToolbarSelect<TargetLang>
             value={lang}
             onChange={setLang}
             options={LANGS}
             label="目标语言"
           />
-          <div className="h-4 w-px shrink-0 bg-border" />
           <EmitOptionsPopover
             lang={lang}
             rootName={rootName}
@@ -253,18 +256,25 @@ export function TypegenTool() {
             options={options}
             onChange={setOptions}
           />
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full"
-            aria-label="复制生成的代码"
-            title="复制生成的代码"
+            aria-label={copied ? "已复制" : "复制生成的代码"}
+            title={copied ? "已复制" : "复制生成的代码"}
             disabled={!display}
             onClick={copyOutput}
+            className={cn(
+              toolbarCellClass,
+              "disabled:pointer-events-none disabled:opacity-40",
+            )}
           >
-            {copied ? <CheckIcon className="text-success" /> : <CopyIcon />}
-          </Button>
+            <span className={cn(toolbarChipClass, "w-7 px-0")}>
+              {copied ? (
+                <CheckIcon className="size-4 text-success" />
+              ) : (
+                <CopyIcon className="size-4" />
+              )}
+            </span>
+          </button>
         </div>
       </div>
     </div>
