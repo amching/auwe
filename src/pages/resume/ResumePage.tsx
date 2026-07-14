@@ -1,11 +1,11 @@
+import { EditorView, type ViewUpdate } from "@uiw/react-codemirror";
 import {
   CheckIcon,
   ChevronDownIcon,
-  EyeIcon,
   FileTextIcon,
   SparklesIcon,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,11 +22,24 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useResume } from "@/stores/resume";
+import { AiPanel } from "./ai/AiPanel";
+import { diffText } from "./ai/diff";
+import { aiDiffExtension, setAiDiff } from "./ai/diffExtension";
+import { SelectionToolbar } from "./ai/SelectionToolbar";
+import {
+  describeScope,
+  paragraphRangeAt,
+  sectionRangeAt,
+  type TextRange,
+} from "./ai/scope";
+import { useResumeAi } from "./ai/store";
 import { exportBaseName } from "./exportName";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { type ResumeLayoutInfo, ResumePreview } from "./ResumePreview";
@@ -53,6 +66,9 @@ function downloadMarkdown(markdown: string) {
   URL.revokeObjectURL(url);
 }
 
+/** 编辑器顶部「AI 优化」入口可选的范围。 */
+type AiScopeKind = "selection" | "paragraph" | "section" | "document";
+
 // 简历工作台：左编辑器 / 右预览纸双栏（小屏退化为 tab）+ 底部工具栏。
 export function ResumePage() {
   const markdown = useResume((s) => s.markdown);
@@ -74,6 +90,121 @@ export function ResumePage() {
     sectionCount: 0,
   });
   const onLayout = useCallback((info: ResumeLayoutInfo) => setLayout(info), []);
+
+  // ————— AI 优化会话 —————
+  // EditorView / 容器 DOM 提升为 state（而非 ref）：效果与回调都要跟着它们重跑。
+  const [editorView, setEditorView] = useState<EditorView | null>(null);
+  const [editorBody, setEditorBody] = useState<HTMLDivElement | null>(null);
+  const [selection, setSelection] = useState<TextRange | null>(null);
+
+  const panelTab = useResumeAi((s) => s.panelTab);
+  const setPanelTab = useResumeAi((s) => s.setPanelTab);
+  const aiStatus = useResumeAi((s) => s.status);
+  const aiTarget = useResumeAi((s) => s.target);
+  const diffEpoch = useResumeAi((s) => s.diffEpoch);
+  // 审阅/生成期间锁住正文：Diff 的偏移与原文快照强绑定，编辑会导致漂移。
+  const editorLocked = aiStatus === "streaming" || aiStatus === "reviewing";
+
+  const onEditorUpdate = useCallback((update: ViewUpdate) => {
+    if (!(update.selectionSet || update.docChanged)) return;
+    const main = update.state.selection.main;
+    setSelection((prev) => {
+      if (main.empty) return prev === null ? prev : null;
+      if (prev && prev.from === main.from && prev.to === main.to) return prev;
+      return { from: main.from, to: main.to };
+    });
+  }, []);
+
+  const editorExtensions = useMemo(() => [aiDiffExtension], []);
+
+  // AI 建议进入审阅态 → 在编辑器对应位置挂 Diff 装饰；其余状态清除。
+  // diffEpoch 用于撤销等场景强制重挂（状态值本身不变）。
+  useEffect(() => {
+    void diffEpoch;
+    const view = editorView;
+    if (!view) return;
+    if (aiStatus === "reviewing" && aiTarget) {
+      const { suggestion } = useResumeAi.getState();
+      view.dispatch({
+        effects: [
+          setAiDiff.of({
+            from: aiTarget.from,
+            segments: diffText(aiTarget.text, suggestion),
+          }),
+        ],
+        // 收拢选区：残留的选区高亮会盖在 Diff 标注上，干扰辨读。
+        selection: { anchor: aiTarget.from },
+        scrollIntoView: false,
+      });
+      view.dispatch({
+        effects: EditorView.scrollIntoView(aiTarget.from, { y: "center" }),
+      });
+    } else {
+      view.dispatch({ effects: setAiDiff.of(null) });
+    }
+  }, [aiStatus, aiTarget, diffEpoch, editorView]);
+
+  // 发起一轮 AI 会话：锁定范围、切到 AI 面板；带指令则直接开始生成。
+  const startAi = useCallback(
+    (range: TextRange, instruction?: string | null) => {
+      const doc = useResume.getState().markdown;
+      const from = Math.max(0, Math.min(range.from, doc.length));
+      const to = Math.max(from, Math.min(range.to, doc.length));
+      const text = doc.slice(from, to);
+      if (!text.trim()) return;
+      useResumeAi.getState().openWith({
+        from,
+        to,
+        text,
+        scope: describeScope(doc, from, to),
+      });
+      // 小屏没有双栏：切到「预览」tab 让右侧面板可见。
+      if (!window.matchMedia("(min-width: 1024px)").matches) {
+        setTab("preview");
+      }
+      if (instruction) void useResumeAi.getState().start(instruction);
+    },
+    [],
+  );
+
+  const startAiFromScope = useCallback(
+    (kind: AiScopeKind) => {
+      const doc = useResume.getState().markdown;
+      const view = editorView;
+      if (kind === "document") {
+        startAi({ from: 0, to: doc.length });
+        return;
+      }
+      const main = view?.state.selection.main;
+      if (kind === "selection") {
+        if (main && !main.empty) startAi({ from: main.from, to: main.to });
+        return;
+      }
+      const pos = main?.head ?? 0;
+      const range =
+        kind === "paragraph"
+          ? paragraphRangeAt(doc, pos)
+          : sectionRangeAt(doc, pos);
+      if (range) startAi(range);
+    },
+    [startAi, editorView],
+  );
+
+  const onToolbarAction = useCallback(
+    (instruction: string | null) => {
+      const main = editorView?.state.selection.main;
+      if (main && !main.empty) {
+        startAi({ from: main.from, to: main.to }, instruction);
+      }
+    },
+    [startAi, editorView],
+  );
+
+  const onReselect = useCallback(() => {
+    useResumeAi.getState().clearTarget();
+    if (!window.matchMedia("(min-width: 1024px)").matches) setTab("edit");
+    editorView?.focus();
+  }, [editorView]);
 
   // 有无内容以"剥掉注释后"为准：只剩教学注释视同空白，展示空状态、禁用导出（避免导出只有注释的文件）。
   const hasContent = stripHtmlComments(markdown).trim().length > 0;
@@ -111,20 +242,42 @@ export function ResumePage() {
             tab === "edit" ? "flex flex-1" : "hidden",
           )}
         >
-          <EditorPanelHeader />
-          <div className="min-h-0 flex-1">
-            <MarkdownEditor value={markdown} onChange={setMarkdown} />
+          <EditorPanelHeader
+            hasSelection={selection !== null}
+            aiDisabled={editorLocked}
+            onStartAi={startAiFromScope}
+          />
+          <div ref={setEditorBody} className="relative min-h-0 flex-1">
+            <MarkdownEditor
+              value={markdown}
+              onChange={setMarkdown}
+              readOnly={editorLocked}
+              extraExtensions={editorExtensions}
+              onCreateEditor={setEditorView}
+              onUpdate={onEditorUpdate}
+            />
+            <SelectionToolbar
+              view={editorView}
+              container={editorBody}
+              selection={selection}
+              disabled={editorLocked}
+              onAction={onToolbarAction}
+            />
           </div>
         </div>
 
-        {/* Preview Stage：面板 = 顶部工具条 + 内部滚动台面（纸在其中浮起） */}
+        {/* Right Stage：预览 / AI 优化 双状态面板 = 顶部工具条 + 内容区。
+            AI 面板以覆盖层盖在预览上（visibility 隐藏而非卸载，保住分页测量）。 */}
         <div
           className={cn(
             "min-h-0 flex-col overflow-hidden bg-desk lg:flex lg:flex-1 lg:rounded-panel lg:border lg:shadow-panel",
             tab === "preview" ? "flex flex-1" : "hidden",
           )}
         >
-          <PreviewStageHeader
+          <StageHeader
+            panelTab={panelTab}
+            onPanelTabChange={setPanelTab}
+            aiActive={aiTarget !== null}
             autoFit={autoFit}
             onToggleAutoFit={() => setAutoFit((v) => !v)}
             canAutoFit={hasContent}
@@ -132,16 +285,28 @@ export function ResumePage() {
             overflow={layout.overflow}
             templateLabel={template.label}
           />
-          <div className="scroll-subtle min-h-0 flex-1 overflow-auto px-4 py-5 lg:px-6 lg:py-6">
-            {hasContent ? (
-              <ResumePreview
-                markdown={markdown}
-                autoFit={autoFit}
-                template={templateId}
-                onLayout={onLayout}
-              />
-            ) : (
-              <EmptyState onRestore={resetToSample} />
+          <div className="relative min-h-0 flex-1">
+            <div
+              className={cn(
+                "scroll-subtle h-full overflow-auto px-4 py-5 lg:px-6 lg:py-6",
+                panelTab === "ai" && "invisible",
+              )}
+            >
+              {hasContent ? (
+                <ResumePreview
+                  markdown={markdown}
+                  autoFit={autoFit}
+                  template={templateId}
+                  onLayout={onLayout}
+                />
+              ) : (
+                <EmptyState onRestore={resetToSample} />
+              )}
+            </div>
+            {panelTab === "ai" && (
+              <div className="absolute inset-0 bg-card duration-150 animate-in fade-in-0">
+                <AiPanel onReselect={onReselect} />
+              </div>
             )}
           </div>
         </div>
@@ -253,9 +418,21 @@ export function ResumePage() {
   );
 }
 
-// Editor Panel 顶部轻量工具条：文件名 + 模式标签 + 自动保存状态。
-// 纯展示：内容经 zustand persist 每次编辑即写入 localStorage，故"自动保存"为实。
-function EditorPanelHeader() {
+interface EditorPanelHeaderProps {
+  hasSelection: boolean;
+  /** AI 生成/审阅期间入口置灰（正文已锁定）。 */
+  aiDisabled: boolean;
+  onStartAi: (kind: AiScopeKind) => void;
+}
+
+// Editor Panel 顶部轻量工具条：文件名 + 模式标签 + AI 优化入口 + 自动保存状态。
+// "自动保存"为实：内容经 zustand persist 每次编辑即写入 localStorage。
+function EditorPanelHeader({
+  hasSelection,
+  aiDisabled,
+  onStartAi,
+}: EditorPanelHeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="flex h-9 shrink-0 items-center gap-2.5 border-b bg-card px-3">
       <FileTextIcon aria-hidden className="size-3.5 shrink-0 text-faint" />
@@ -263,7 +440,48 @@ function EditorPanelHeader() {
       <Badge className="px-1.5 py-0 text-ui-xs font-medium text-muted-foreground">
         Markdown
       </Badge>
-      <span className="ml-auto flex items-center gap-1.5 text-ui-xs text-faint">
+
+      {/* 有选区 → 直接对选区发起；无选区 → 弹出范围选择。 */}
+      <DropdownMenu
+        open={menuOpen}
+        onOpenChange={(open) => {
+          if (open && hasSelection) {
+            onStartAi("selection");
+            return;
+          }
+          setMenuOpen(open);
+        }}
+      >
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              disabled={aiDisabled}
+              className="ml-auto flex items-center gap-1 rounded-md px-1.5 py-0.5 text-ui-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-40"
+            >
+              <SparklesIcon aria-hidden className="size-3" />
+              AI 优化
+            </button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          {/* GroupLabel 必须在 Group 里（Base UI 约束，否则运行时报错） */}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>选择优化范围</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => onStartAi("paragraph")}>
+              当前段落
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onStartAi("section")}>
+              当前章节
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onStartAi("document")}>
+              整份简历
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <span className="flex items-center gap-1.5 text-ui-xs text-faint">
         <span aria-hidden className="size-1.5 rounded-full bg-success/80" />
         自动保存
       </span>
@@ -271,7 +489,11 @@ function EditorPanelHeader() {
   );
 }
 
-interface PreviewStageHeaderProps {
+interface StageHeaderProps {
+  panelTab: "preview" | "ai";
+  onPanelTabChange: (tab: "preview" | "ai") => void;
+  /** 有进行中的 AI 会话（预览态下给「AI 优化」标一个小圆点）。 */
+  aiActive: boolean;
   autoFit: boolean;
   onToggleAutoFit: () => void;
   canAutoFit: boolean;
@@ -280,52 +502,92 @@ interface PreviewStageHeaderProps {
   templateLabel: string;
 }
 
-// Preview Stage 顶部轻量工具条：预览标识 + A4 + 模板名 + 智能一页开关 + 真实页数。
-// “智能一页”开启后先收紧间距、再在标准区间内微调字号尽量压进一页；右侧页数由真分页给出，所见即所得。
-function PreviewStageHeader({
+// 右侧面板顶部工具条：预览 / AI 优化 双状态切换 + 预览态的原有控件。
+// "智能一页"开启后先收紧间距、再在标准区间内微调字号尽量压进一页；右侧页数由真分页给出，所见即所得。
+function StageHeader({
+  panelTab,
+  onPanelTabChange,
+  aiActive,
   autoFit,
   onToggleAutoFit,
   canAutoFit,
   pageCount,
   overflow,
   templateLabel,
-}: PreviewStageHeaderProps) {
+}: StageHeaderProps) {
   return (
     <div className="flex h-9 shrink-0 items-center gap-2.5 border-b bg-card px-3">
-      <EyeIcon aria-hidden className="size-3.5 shrink-0 text-faint" />
-      <span className="text-ui-sm font-medium text-foreground">预览</span>
-      <Badge className="px-1.5 py-0 text-ui-xs font-medium text-muted-foreground">
-        A4
-      </Badge>
-      <span className="text-ui-xs text-faint">{templateLabel}</span>
+      {/* 克制的分段切换：不是主导航，只是这个面板的两个状态 */}
+      <div className="grid grid-flow-col rounded-md bg-muted p-0.5 text-ui-xs">
+        {(
+          [
+            { value: "preview", label: "预览" },
+            { value: "ai", label: "AI 优化" },
+          ] as const
+        ).map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={panelTab === o.value}
+            onClick={() => onPanelTabChange(o.value)}
+            className={cn(
+              "flex items-center gap-1 rounded-[5px] px-2 py-0.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              panelTab === o.value
+                ? "bg-card font-medium text-foreground shadow-panel"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {o.label}
+            {o.value === "ai" && aiActive && panelTab !== "ai" && (
+              <span
+                aria-hidden
+                className="size-1.5 rounded-full bg-primary/70"
+              />
+            )}
+          </button>
+        ))}
+      </div>
 
-      {/* 开了智能一页但压到最紧凑档（间距到底、字号到标准区间下限）仍超目标页数：提示精简 */}
-      {autoFit && overflow && (
-        <span className="text-ui-xs font-medium text-warning">
-          内容较多，建议精简
+      {panelTab === "preview" ? (
+        <>
+          <Badge className="px-1.5 py-0 text-ui-xs font-medium text-muted-foreground">
+            A4
+          </Badge>
+          <span className="text-ui-xs text-faint">{templateLabel}</span>
+
+          {/* 开了智能一页但压到最紧凑档（间距到底、字号到标准区间下限）仍超目标页数：提示精简 */}
+          {autoFit && overflow && (
+            <span className="text-ui-xs font-medium text-warning">
+              内容较多，建议精简
+            </span>
+          )}
+
+          <div className="ml-auto flex items-center gap-2 text-ui-xs text-faint">
+            <button
+              type="button"
+              onClick={onToggleAutoFit}
+              disabled={!canAutoFit}
+              aria-pressed={autoFit}
+              title="先收紧行距段距、再在标准区间内微调字号，尽量把内容压进一页 A4"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 font-medium transition-colors disabled:opacity-40",
+                autoFit
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <SparklesIcon aria-hidden className="size-3" />
+              智能一页
+            </button>
+            <span aria-hidden className="h-3 w-px bg-border" />
+            <span className="tabular-nums">{pageCount} 页</span>
+          </div>
+        </>
+      ) : (
+        <span className="ml-auto text-ui-xs text-faint">
+          修改在左侧编辑器中审阅后才会生效
         </span>
       )}
-
-      <div className="ml-auto flex items-center gap-2 text-ui-xs text-faint">
-        <button
-          type="button"
-          onClick={onToggleAutoFit}
-          disabled={!canAutoFit}
-          aria-pressed={autoFit}
-          title="先收紧行距段距、再在标准区间内微调字号，尽量把内容压进一页 A4"
-          className={cn(
-            "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 font-medium transition-colors disabled:opacity-40",
-            autoFit
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          <SparklesIcon aria-hidden className="size-3" />
-          智能一页
-        </button>
-        <span aria-hidden className="h-3 w-px bg-border" />
-        <span className="tabular-nums">{pageCount} 页</span>
-      </div>
     </div>
   );
 }

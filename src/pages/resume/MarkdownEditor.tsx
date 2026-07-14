@@ -1,7 +1,12 @@
 import { markdown } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
-import CodeMirror, { EditorView } from "@uiw/react-codemirror";
+import CodeMirror, {
+  EditorView,
+  type Extension,
+  type ViewUpdate,
+} from "@uiw/react-codemirror";
+import { useMemo } from "react";
 
 // 编辑器表面 + 留白（浅色，跟随 App token；本产品不支持暗色）。
 const editorTheme = EditorView.theme({
@@ -50,7 +55,7 @@ const mdHighlight = HighlightStyle.define([
   },
 ]);
 
-const extensions = [
+const baseExtensions = [
   markdown(),
   EditorView.lineWrapping,
   editorTheme,
@@ -60,10 +65,32 @@ const extensions = [
 interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
+  /** 只读（AI 建议审阅期间锁住正文，防止 Diff 位置漂移）。 */
+  readOnly?: boolean;
+  /** 附加扩展（须由调用方 useMemo 保持引用稳定，避免每次渲染重配）。 */
+  extraExtensions?: Extension[];
+  /** 拿到底层 EditorView（选区读取、Diff 装饰 dispatch 用）。 */
+  onCreateEditor?: (view: EditorView) => void;
+  /** 每次视图更新回调（选区跟踪用）。 */
+  onUpdate?: (update: ViewUpdate) => void;
 }
 
 /** 受控的 CodeMirror Markdown 编辑器；简历专用，但本身与简历语义无耦合。 */
-export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
+export function MarkdownEditor({
+  value,
+  onChange,
+  readOnly,
+  extraExtensions,
+  onCreateEditor,
+  onUpdate,
+}: MarkdownEditorProps) {
+  const extensions = useMemo(
+    () =>
+      extraExtensions
+        ? [...baseExtensions, ...extraExtensions]
+        : baseExtensions,
+    [extraExtensions],
+  );
   return (
     <CodeMirror
       value={value}
@@ -72,6 +99,9 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
       theme="light"
       height="100%"
       className="h-full"
+      readOnly={readOnly}
+      onCreateEditor={onCreateEditor}
+      onUpdate={onUpdate}
       basicSetup={{
         lineNumbers: false,
         foldGutter: false,

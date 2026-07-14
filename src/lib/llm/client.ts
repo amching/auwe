@@ -26,6 +26,7 @@ function browserHeaders(endpoint: string): Record<string, string> {
 export async function* streamCompletion(
   config: LlmConfig,
   prompt: string,
+  opts?: { signal?: AbortSignal },
 ): AsyncIterable<string> {
   const provider = createOpenAI({
     baseURL: config.endpoint,
@@ -36,6 +37,7 @@ export async function* streamCompletion(
   const result = streamText({
     model: provider.chat(config.model),
     prompt,
+    abortSignal: opts?.signal,
   });
 
   for await (const chunk of result.textStream) {

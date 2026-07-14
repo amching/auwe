@@ -59,6 +59,14 @@ src/
       templates.ts               # 视觉模板注册表（id/label：clean / color）
       templates.css              # 模板样式：每模板一个 [data-resume-template] 块（--paper-* token + 作用域版式细则）
       sampleResume.ts            # 内置示例简历内容（Markdown）
+      ai/                        # AI 优化：选区/段落/章节/全文 → 流式建议 → 编辑器内 Diff 审阅 → 接受才写回
+        store.ts                 # 会话状态机（zustand 非持久化）：idle/streaming/reviewing/applied；apply() 是唯一写回 useResume 的路径
+        diff.ts                  # token 级 LCS diff（中文按字、英文按词；纯逻辑有测试）
+        scope.ts                 # Markdown 结构范围识别：面包屑 + 段落/章节取范围（纯逻辑有测试）
+        prompts.ts               # 快捷指令 + prompt 组装
+        diffExtension.ts         # CM6 Diff 装饰：del 划线 mark + add widget，文档本身不动
+        SelectionToolbar.tsx     # 选中文字后的浮动工具条（AI 优化 / 精简 / 更专业 / 强化成果）
+        AiPanel.tsx              # 右栏 AI 面板：范围 + 原文卡 + 快捷指令 + 对话 + 建议卡（应用/继续调整/放弃）
     polish/PolishPage.tsx        # 文风（已跑通的流式润色竖切片）
     tools/
       registry.ts                # 工具注册表：单一事实源（网格/⌘K 面板/路由都读它；新工具往这里加）
