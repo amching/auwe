@@ -1,4 +1,4 @@
-import type { EditorView } from "@uiw/react-codemirror";
+import { EditorView, type Extension, placeholder } from "@uiw/react-codemirror";
 import { ClipboardPaste, Eraser, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
@@ -19,6 +19,27 @@ import {
 import { ResultPanel } from "./ResultPanel";
 import { SAMPLE_PROMPT } from "./samplePrompt";
 import { useDeconstruct } from "./useDeconstruct";
+
+// 空编辑器的引导文案：说清「贴什么进来」和「会得到什么」。
+// 用字符串 + pre-wrap（见 placeholderTheme）而非 DOM 构造，保持简单。
+const EDITOR_PLACEHOLDER = `在这里粘贴一段长 Prompt，例如：
+
+·  让 ChatGPT 帮你生成的开发需求 Prompt
+·  准备交给 Claude Code / Cursor 执行的任务描述
+·  任何又长又难读的结构化指令
+
+解构后可以得到：核心意图、逻辑结构、各部分的作用，以及去掉业务内容的可复用骨架。
+
+也可以点击左下角「使用示例」先看效果。`;
+
+// CM 的 .cm-placeholder 默认单行展示；转成 pre-wrap 并调淡、放松行距。
+const placeholderTheme = EditorView.theme({
+  ".cm-placeholder": {
+    color: "var(--text-muted)",
+    whiteSpace: "pre-wrap",
+    lineHeight: "1.8",
+  },
+});
 
 /**
  * Prompt 解构工作台：左「Prompt 原文」编辑器 / 右「解构结果」双栏。
@@ -108,8 +129,12 @@ export function PromptPage() {
   }, []);
 
   // 扩展引用必须稳定（MarkdownEditor 会因引用变化整体重配）。
-  const extensions = useMemo(
-    () => [promptHighlightExtension(onFragmentClick)],
+  const extensions = useMemo<Extension[]>(
+    () => [
+      promptHighlightExtension(onFragmentClick),
+      placeholder(EDITOR_PLACEHOLDER),
+      placeholderTheme,
+    ],
     [onFragmentClick],
   );
 
@@ -183,31 +208,37 @@ export function PromptPage() {
       <div className="grid min-h-0 flex-1 items-stretch gap-4 lg:grid-cols-[42fr_58fr]">
         {/* ————— 左：Prompt 原文 ————— */}
         <Card className="flex min-h-0 flex-col overflow-hidden">
-          <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 py-2.5">
-            <CardTitle className="shrink-0">Prompt 原文</CardTitle>
-            <div className="flex min-w-0 items-center gap-0.5">
-              <span className="mr-1.5 whitespace-nowrap text-ui-xs tabular-nums text-faint">
-                {input.length} 字符
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={pasteFromClipboard}
-                disabled={analyzing}
-              >
-                <ClipboardPaste />
-                粘贴
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setInput("")}
-                disabled={!input || analyzing}
-              >
-                <Eraser />
-                清空
-              </Button>
+          <CardHeader className="gap-1 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="shrink-0">Prompt 原文</CardTitle>
+              <div className="flex min-w-0 items-center gap-0.5">
+                <span className="mr-1.5 whitespace-nowrap text-ui-xs tabular-nums text-faint">
+                  {input.length} 字符
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={pasteFromClipboard}
+                  disabled={analyzing}
+                >
+                  <ClipboardPaste />
+                  粘贴
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setInput("")}
+                  disabled={!input || analyzing}
+                >
+                  <Eraser />
+                  清空
+                </Button>
+              </div>
             </div>
+            <p className="text-ui-xs leading-relaxed text-faint">
+              支持纯文本或
+              Markdown，换行原样保留；只有点击「开始解构」才会发起分析。
+            </p>
           </CardHeader>
           <div className="min-h-0 flex-1 border-t">
             <div className="h-[45vh] lg:h-full">
@@ -246,11 +277,6 @@ export function PromptPage() {
             >
               使用示例
             </Button>
-            {!hasInput && (
-              <span className="text-ui-xs text-faint">
-                粘贴一段 Prompt，或先看看示例。
-              </span>
-            )}
           </div>
         </Card>
 
