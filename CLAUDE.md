@@ -72,6 +72,14 @@ src/
         SelectionToolbar.tsx     # 选中文字后的浮动工具条（AI 优化 / 精简 / 更专业 / 强化成果）
         AiPanel.tsx              # 右栏 AI 面板：范围 + 原文卡 + 快捷指令 + 对话 + 建议卡（应用/继续调整/放弃）
     polish/PolishPage.tsx        # 文风（已跑通的流式润色竖切片）
+    prompt/                      # Prompt 解构（/prompt）：粘贴长 Prompt → AI 拆成意图/结构/思想/可复用骨架
+      PromptPage.tsx             # 双栏工作台：左原文编辑器 / 右解构结果；原文片段↔结构节点双向联动
+      ResultPanel.tsx            # 右栏四态（空/骨架屏/错误/成功）：核心意图→逻辑结构→结构详情→核心思想→骨架
+      analysis.ts                # 解析校验 + 反幻觉片段定位：AI 摘录须逐字定位到原文，否则丢弃（纯逻辑有测试）
+      highlight.ts               # CM6 片段高亮扩展：mark 装饰 + 点击命中回调 + 滚动定位
+      prompts.ts                 # 解构提示词组装（<user_prompt> 边界防注入）
+      samplePrompt.ts            # 「使用示例」内置 Prompt
+      useDeconstruct.ts          # 请求状态机（status/error 瞬态；结果写入 stores/prompt 持久化）
     tools/
       registry.ts                # 工具注册表：单一事实源（网格/⌘K 面板/路由都读它；新工具往这里加）
       ToolsLayout.tsx            # 工具区外壳：⌘K 命令面板 + 子路由
@@ -94,6 +102,7 @@ src/
   stores/
     settings.ts                  # zustand + persist → localStorage（endpoint/apiKey/model）
     resume.ts                    # zustand + persist → localStorage（简历 markdown 源）
+    prompt.ts                    # zustand + persist → localStorage（解构页草稿 + 最近一次解构结果，成对存取）
   test/setup.ts                  # vitest + jest-dom
 ```
 

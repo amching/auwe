@@ -8,6 +8,7 @@ import { useTrialChannel } from "@/lib/llm/trial";
 import { cn } from "@/lib/utils";
 // 与简历语义无耦合的通用 Markdown 编辑器（见其文件头注释），直接复用不另起炉灶。
 import { MarkdownEditor } from "@/pages/resume/MarkdownEditor";
+import { usePromptStudio } from "@/stores/prompt";
 import { useSettings } from "@/stores/settings";
 import {
   promptHighlightExtension,
@@ -24,7 +25,7 @@ import { useDeconstruct } from "./useDeconstruct";
  * 核心价值是「原文片段 ↔ Prompt 结构」双向联动，而不是右侧输出一篇总结：
  * - 右侧点结构节点 / 原文依据 → 左侧滚动定位 + 强调高亮；
  * - 左侧点已识别片段 → 右侧对应节点选中并滚入视口。
- * 结果不持久化（草稿与结果强绑定当次会话），刷新即清。
+ * 草稿 + 最近一次结果持久化在 stores/prompt（localStorage），切页/刷新不丢。
  */
 export function PromptPage() {
   const configured = useSettings((s) =>
@@ -34,29 +35,39 @@ export function PromptPage() {
   const trial = useTrialChannel(!configured);
   const llmReady = configured || trial.status === "available";
 
-  const [input, setInput] = useState("");
+  // 草稿与结果都持久化在 usePromptStudio（localStorage），切页/刷新不丢。
+  const input = usePromptStudio((s) => s.input);
+  const setInput = usePromptStudio((s) => s.setInput);
+  const result = usePromptStudio((s) => s.result);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { status, result, error, analyze } = useDeconstruct();
+  const { status, error, analyze } = useDeconstruct();
 
   const analyzing = status === "analyzing";
   const hasInput = Boolean(input.trim());
   const canAnalyze = hasInput && llmReady && !analyzing;
   const stale = result !== null && input !== result.source;
 
-  // 结果变化（新一轮解构完成/首轮完成）→ 重挂左侧片段高亮，选中态清零。
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view) return;
+  /** 把某轮结果的片段范围挂成编辑器高亮（传 null 清除）。 */
+  const applyHighlights = useCallback((view: EditorView, r: typeof result) => {
     const specs =
-      result?.analysis.logicFlow.flatMap((n) =>
+      r?.analysis.logicFlow.flatMap((n) =>
         n.fragments.map((f) => ({ nodeId: n.id, from: f.from, to: f.to })),
       ) ?? [];
     view.dispatch({
       effects: [setPromptHighlights.of(specs), setActiveHighlight.of(null)],
     });
+  }, []);
+
+  // 结果变化（新一轮解构完成/首轮完成）→ 重挂左侧片段高亮，选中态清零。
+  // 注意：组件重挂 + 已有持久化结果时，此 effect 首跑早于 CodeMirror 建好
+  // view（它要多一轮渲染），viewRef 还是 null——那条路径由 onCreateEditor 补挂。
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    applyHighlights(view, result);
     setSelectedId(null);
-  }, [result]);
+  }, [result, applyHighlights]);
 
   /** 选中结构节点（null 取消）；reveal 时把它的第一个片段滚到左侧视口中部。 */
   const selectNode = useCallback(
@@ -116,7 +127,7 @@ export function PromptPage() {
       if (view) {
         view.dispatch(view.state.replaceSelection(text));
       } else {
-        setInput((prev) => prev + text);
+        setInput(usePromptStudio.getState().input + text);
       }
     } catch {
       // 剪贴板不可读（权限/浏览器限制）时静默失败，用户仍可 ⌘V 粘贴。
@@ -206,6 +217,8 @@ export function PromptPage() {
                 extraExtensions={extensions}
                 onCreateEditor={(view) => {
                   viewRef.current = view;
+                  // 重挂（切页回来/刷新）时补挂持久化结果的高亮。
+                  applyHighlights(view, usePromptStudio.getState().result);
                 }}
               />
             </div>

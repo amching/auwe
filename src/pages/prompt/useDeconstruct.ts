@@ -2,15 +2,20 @@ import { useCallback, useRef, useState } from "react";
 import { streamCompletion } from "@/lib/llm/client";
 import { describeLlmError } from "@/lib/llm/errors";
 import { resolveLlm } from "@/lib/llm/trial";
-import { type PromptAnalysis, parseAnalysis } from "./analysis";
+import { usePromptStudio } from "@/stores/prompt";
+import { parseAnalysis } from "./analysis";
 import { buildDeconstructPrompt } from "./prompts";
 
 /**
  * 解构请求状态机（与文风页 useDailyReport 同款范式）：
- * - idle       尚未分析
- * - analyzing  请求中（右侧骨架屏；已有旧结果时旧结果保留在 result 里）
+ * - idle       尚未分析（可能已有上一轮的持久化结果）
+ * - analyzing  请求中（右侧骨架屏；已有旧结果时旧结果保留在 store 里）
  * - success    已有可展示的解构结果
  * - error      本轮失败（旧结果与用户输入都不丢）
+ *
+ * status/error 是本次会话的瞬态；结果本身写入 usePromptStudio（persist），
+ * 切页/刷新不丢。分析中途切走页面也没关系：流式循环继续跑完，结果照常落 store，
+ * 回来即可看到（status 归 idle，但 idle + 有结果同样渲染结果）。
  *
  * 铁律第 3 条：请求走 streamCompletion 流式消费；本页产物是结构化 JSON，
  * 故流式只用于传输（chunk 累加），解析完成后一次性上屏。
@@ -20,15 +25,8 @@ import { buildDeconstructPrompt } from "./prompts";
 
 export type DeconstructStatus = "idle" | "analyzing" | "success" | "error";
 
-export interface DeconstructResult {
-  analysis: PromptAnalysis;
-  /** 分析所依据的原文快照：判断结果是否过期 + 片段偏移的坐标系。 */
-  source: string;
-}
-
 export function useDeconstruct() {
   const [status, setStatus] = useState<DeconstructStatus>("idle");
-  const [result, setResult] = useState<DeconstructResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 同步在途标记：setStatus 到下次渲染才禁用按钮，其间的连点会漏进来。
   const inFlight = useRef(false);
@@ -72,7 +70,7 @@ export function useDeconstruct() {
     }
     try {
       const analysis = parseAnalysis(acc, source);
-      setResult({ analysis, source });
+      usePromptStudio.getState().setResult({ analysis, source });
       setStatus("success");
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
@@ -83,5 +81,5 @@ export function useDeconstruct() {
     }
   }, []);
 
-  return { status, result, error, analyze };
+  return { status, error, analyze };
 }
