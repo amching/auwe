@@ -44,7 +44,7 @@ functions/
   api/trial/[[path]].ts          # Cloudflare Pages Function：试用通道代理（GET 探测 / POST chat/completions 流式透传；model 服务端钉死 + max_tokens 封顶）
 src/
   main.tsx                       # 挂载 <App/>（StrictMode + createRoot）
-  App.tsx                        # createBrowserRouter：根布局 + 路由（/ 占位首页待做、/resume、/prompt、/polish、/tools；页面级 lazy code-split）
+  App.tsx                        # createBrowserRouter：根布局 + 路由（/ 落地页、/resume、/prompt、/polish、/tools；页面级 lazy code-split）
   index.css                      # Tailwind v4 + shadcn 主题变量
   components/
     layout/RootLayout.tsx        # 顶部导航 + <Outlet/>

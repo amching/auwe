@@ -31,7 +31,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <RootLayout />,
     children: [
-      // 首页暂为占位（待做落地页）；简历工作台在 /resume。
+      // 首页 = 产品落地页；简历工作台在 /resume。
       { index: true, element: <HomePage /> },
       { path: "resume", element: <ResumePage /> },
       { path: "polish", element: <PolishPage /> },
