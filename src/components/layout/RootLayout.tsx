@@ -29,7 +29,7 @@ export function RootLayout() {
     const item = NAV.find((n) =>
       n.end ? pathname === n.to : pathname.startsWith(n.to),
     );
-    document.title = item ? `${item.label} · auwe` : "auwe — 职场工具站";
+    document.title = item ? `${item.label} · auwe` : "auwe — 职场AI工具站";
   }, [pathname]);
 
   return (
@@ -78,8 +78,8 @@ export function RootLayout() {
             {/* 副标题末字在「站」↔「栈」间缓慢交叉溶解（工具站 / 工具栈 双关）。
                 动画字形对读屏隐藏，读屏念 sr-only 的完整文案（generic span 不支持 aria-label）。 */}
             <span className="truncate text-ui-xs font-medium tracking-wide text-faint">
-              <span className="sr-only">职场工具站</span>
-              <span aria-hidden>职场工具</span>
+              <span className="sr-only">职场AI工具站</span>
+              <span aria-hidden>职场AI工具</span>
               <span aria-hidden className="morph-glyph">
                 <span className="morph-slot">站</span>
                 <span className="morph-a">站</span>
