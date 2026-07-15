@@ -14,9 +14,9 @@ function PageFallback() {
 }
 
 const NAV = [
-  { to: "/", label: "简历", end: true },
-  { to: "/polish", label: "文风", end: false },
+  { to: "/resume", label: "简历", end: false },
   { to: "/prompt", label: "解构", end: false },
+  { to: "/polish", label: "文风", end: false },
   { to: "/tools", label: "工具", end: false },
 ];
 

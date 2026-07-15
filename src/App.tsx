@@ -4,6 +4,9 @@ import { RootLayout } from "@/components/layout/RootLayout";
 
 // 路由级 code-split：CodeMirror 只落进 Resume chunk，Polish/Tools 不再拖它。
 // Suspense 边界在 RootLayout 的 <Outlet> 外统一兜底。
+const HomePage = lazy(() =>
+  import("@/pages/home/HomePage").then((m) => ({ default: m.HomePage })),
+);
 const ResumePage = lazy(() =>
   import("@/pages/resume/ResumePage").then((m) => ({ default: m.ResumePage })),
 );
@@ -28,7 +31,9 @@ const router = createBrowserRouter([
     path: "/",
     element: <RootLayout />,
     children: [
-      { index: true, element: <ResumePage /> },
+      // 首页暂为占位（待做落地页）；简历工作台在 /resume。
+      { index: true, element: <HomePage /> },
+      { path: "resume", element: <ResumePage /> },
       { path: "polish", element: <PolishPage /> },
       { path: "prompt", element: <PromptPage /> },
       {
