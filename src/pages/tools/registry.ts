@@ -38,6 +38,8 @@ export interface ToolMeta {
   Component: ComponentType;
   /** 需要宽幅工作区的工具（如双栏编辑器）；专注视图放宽容器。 */
   wide?: boolean;
+  /** 需要 AI 能力（BYOK 或试用通道）；网格/面板/专注视图显示「AI」徽记。 */
+  ai?: boolean;
 }
 
 /**
@@ -118,6 +120,7 @@ export const TOOLS: ToolMeta[] = [
     ],
     Icon: CompassIcon,
     Component: LifeDesignTool,
+    ai: true,
   },
 ];
 

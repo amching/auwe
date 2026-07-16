@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { AiBadge } from "./AiBadge";
 import { useCommandMenu } from "./commandStore";
 import { TOOLS } from "./registry";
 
@@ -48,7 +49,14 @@ export function CommandPalette() {
     const q = query.trim().toLowerCase();
     if (!q) return TOOLS;
     return TOOLS.filter((t) =>
-      [t.name, t.description, t.category, ...(t.keywords ?? [])]
+      [
+        t.name,
+        t.description,
+        t.category,
+        ...(t.keywords ?? []),
+        // AI 徽记也可被搜索：输入 "ai" 即筛出所有 AI 工具。
+        t.ai ? "ai" : "",
+      ]
         .join(" ")
         .toLowerCase()
         .includes(q),
@@ -121,6 +129,7 @@ export function CommandPalette() {
                   )}
                 />
                 <span className="text-ui font-medium">{t.name}</span>
+                {t.ai && <AiBadge />}
                 <span className="ml-auto text-ui-xs text-faint">
                   {t.category}
                 </span>

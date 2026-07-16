@@ -2,6 +2,7 @@ import { ArrowLeftIcon } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AiBadge } from "./AiBadge";
 import { getTool } from "./registry";
 
 /** 工具专注视图：返回 + 标题 + 工具本体。未知 slug 回退到网格。 */
@@ -33,6 +34,7 @@ export function ToolView() {
             <Icon />
           </span>
           <h1 className="font-heading text-lg font-semibold">{tool.name}</h1>
+          {tool.ai && <AiBadge />}
         </div>
       </div>
       <Component />

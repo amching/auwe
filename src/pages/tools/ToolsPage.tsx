@@ -1,6 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { AiBadge } from "./AiBadge";
 import { useCommandMenu } from "./commandStore";
 import { TOOLS } from "./registry";
 
@@ -48,6 +49,7 @@ export function ToolsPage() {
                 <tool.Icon />
               </span>
               <span className="text-ui-sm font-semibold">{tool.name}</span>
+              {tool.ai && <AiBadge />}
             </div>
             <span className="line-clamp-2 text-ui-xs text-muted-foreground">
               {tool.description}
