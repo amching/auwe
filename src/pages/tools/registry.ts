@@ -2,6 +2,7 @@ import {
   BracesIcon,
   ClockIcon,
   Code2Icon,
+  CompassIcon,
   type LucideIcon,
 } from "lucide-react";
 import { type ComponentType, lazy } from "react";
@@ -13,6 +14,12 @@ const JsonTool = lazy(() =>
 );
 const TypegenTool = lazy(() =>
   import("./typegen/TypegenTool").then((m) => ({ default: m.TypegenTool })),
+);
+// 人生设计师拖着 Markdown 渲染 + AI SDK，同样懒加载。
+const LifeDesignTool = lazy(() =>
+  import("./lifedesign/LifeDesignTool").then((m) => ({
+    default: m.LifeDesignTool,
+  })),
 );
 
 export type ToolCategory = "开发者" | "设计师" | "内容";
@@ -92,6 +99,25 @@ export const TOOLS: ToolMeta[] = [
     Icon: Code2Icon,
     Component: TypegenTool,
     wide: true,
+  },
+  {
+    slug: "life-design",
+    name: "人生设计师",
+    category: "内容",
+    description:
+      "斯坦福人生设计课 AI 教练：多轮深度对话，生成你的《个人人生设计蓝图》。",
+    keywords: [
+      "life design",
+      "人生设计",
+      "奥德赛计划",
+      "斯坦福",
+      "职业规划",
+      "教练",
+      "卡兹克",
+      "chat",
+    ],
+    Icon: CompassIcon,
+    Component: LifeDesignTool,
   },
 ];
 

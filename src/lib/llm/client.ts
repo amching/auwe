@@ -44,3 +44,37 @@ export async function* streamCompletion(
     yield chunk;
   }
 }
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/**
+ * Multi-turn variant of {@link streamCompletion}: takes a system prompt plus
+ * the message history instead of a single prompt. Same BYOK / streaming /
+ * CORS story — only the request shape differs. (AI SDK v7 rejects `system`
+ * roles inside `messages`; the system prompt goes via `instructions`.)
+ */
+export async function* streamChat(
+  config: LlmConfig,
+  input: { system: string; messages: ChatMessage[] },
+  opts?: { signal?: AbortSignal },
+): AsyncIterable<string> {
+  const provider = createOpenAI({
+    baseURL: config.endpoint,
+    apiKey: config.apiKey,
+    headers: browserHeaders(config.endpoint),
+  });
+
+  const result = streamText({
+    model: provider.chat(config.model),
+    instructions: input.system,
+    messages: input.messages,
+    abortSignal: opts?.signal,
+  });
+
+  for await (const chunk of result.textStream) {
+    yield chunk;
+  }
+}

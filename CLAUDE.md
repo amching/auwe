@@ -91,8 +91,9 @@ src/
       timestamp/                 # 时间戳 ⇄ 日期时间（多时区）
       json/                      # JSON 格式化/查看：CodeMirror 源码编辑 + 虚拟化树视图 + 搜索过滤 + jsonrepair 容错解析（model/parse 纯逻辑有测试）
       typegen/                   # 类型定义生成：JSON/YAML/TOML/CSV → TS/Go/Rust（parseInput/infer/emit 纯逻辑有测试；Go json tag/omitempty/指针、Rust serde 可配）
+      lifedesign/                # 人生设计师：斯坦福人生设计课多轮深度对话 → 流式聊天 → 《个人人生设计蓝图》
   lib/
-    llm/client.ts                # streamCompletion：createOpenAI + streamText 流式封装
+    llm/client.ts                # streamCompletion（单发）/ streamChat（多轮消息）：createOpenAI + streamText 流式封装
     llm/types.ts
     llm/trial.ts                 # 试用通道：探测 /api/trial（useTrialChannel）+ resolveLlm()（BYOK 优先，试用兜底）
     llm/errors.ts                # describeLlmError：LLM 异常 → 可行动中文（接口层失败 vs 内容为空要分清；纯逻辑有测试）
@@ -103,6 +104,7 @@ src/
     settings.ts                  # zustand + persist → localStorage（endpoint/apiKey/model）
     resume.ts                    # zustand + persist → localStorage（简历 markdown 源）
     prompt.ts                    # zustand + persist → localStorage（解构页草稿 + 最近一次解构结果，成对存取）
+    lifedesign.ts                # zustand + persist → localStorage（人生设计师的多轮对话记录）
   test/setup.ts                  # vitest + jest-dom
 ```
 
