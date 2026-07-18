@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  ArrowUpRight,
   FileText,
   KeyRound,
   PenLine,
@@ -191,9 +192,35 @@ export function HomePage() {
 
       {/* ————— 页脚痕迹 ————— */}
       <footer className="mt-14 mb-8 border-t pt-5 sm:mt-16">
-        <p className="text-ui-xs text-faint">
-          auwe · 职场AI工具站 —— 无账号 · 纯客户端 · 自带 API Key
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-ui-xs text-faint">
+          <span className="font-heading font-[550] tracking-[0.08em] text-muted-foreground">
+            A
+            <span aria-hidden className="mx-[0.04em] text-faint">
+              ·
+            </span>
+            U
+            <span aria-hidden className="mx-[0.04em] text-faint">
+              ·
+            </span>
+            WE
+          </span>
+          <span aria-hidden className="text-faint/60">
+            ·
+          </span>
+          <span>MIT license</span>
+          <span aria-hidden className="text-faint/60">
+            ·
+          </span>
+          <a
+            href="https://github.com/amching/auwe"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1 rounded-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            github.com/amching/auwe
+            <ArrowUpRight aria-hidden className="size-3" />
+          </a>
+        </div>
       </footer>
     </section>
   );
