@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDailyReportPrompt,
+  buildQuarterlyReportPrompt,
   buildWeeklyReportPrompt,
   DAILY_REPORT_FACT_RULES,
   DAILY_REPORT_STYLE_CONFIG,
+  hasAchievementContent,
   isPolishLevel,
   LEVEL_ORDER,
   POLISH_LEVELS,
   type PolishLevel,
+  type QuarterlyReportInput,
   renderStyleRules,
   type WeeklyReportInput,
 } from "./prompts";
@@ -277,6 +280,127 @@ describe("buildWeeklyReportPrompt", () => {
     expect(prompt).toContain("彻底删掉");
     // 明确禁止用占位撑结构。
     expect(prompt).toMatch(/绝不写「暂无」/);
+  });
+});
+
+const QUARTERLY_FULL: QuarterlyReportInput = {
+  quarterLabel: "2026 年第三季度",
+  quarterRange: "7 月 1 日 – 9 月 30 日",
+  goals: "- 完成职场工具站第一版\n- 上线日报、周报和 Prompt 解构功能",
+  achievements: [
+    {
+      action: "完成日报、周报生成能力",
+      impact: "用户可以把零散工作整理为结构化汇报",
+      evidence: "完成 3 个核心页面，覆盖 5 档润色程度",
+    },
+    { action: "上线 Prompt 解构页面", impact: "", evidence: "" },
+  ],
+  unfinished: "尚未进行真实用户验证",
+  nextQuarterPriorities: "- 完成核心功能上线\n- 邀请真实用户使用",
+  risks: "功能持续增加，但用户价值尚未验证",
+};
+
+describe("buildQuarterlyReportPrompt", () => {
+  it("复用与日报相同的事实红线", () => {
+    for (const level of ALL_LEVELS) {
+      const prompt = buildQuarterlyReportPrompt(QUARTERLY_FULL, level);
+      expect(prompt).toContain(DAILY_REPORT_FACT_RULES);
+    }
+  });
+
+  it("固定输出结构写进 Prompt（目标完成情况 + 成果价值/证据是关键两层）", () => {
+    const prompt = buildQuarterlyReportPrompt(QUARTERLY_FULL, 3);
+    expect(prompt).toContain("## 季度概览");
+    expect(prompt).toContain("## 目标完成情况");
+    expect(prompt).toContain("## 关键成果");
+    expect(prompt).toContain("## 未完成事项与复盘");
+    expect(prompt).toContain("## 下季度重点");
+    expect(prompt).toContain("## 风险与支持需求");
+    // 区分「做了什么」与「价值」是季度汇报的核心。
+    expect(prompt).toContain("区分「做了什么」和「产生了什么价值」");
+    expect(prompt).toContain("**产生的价值：**");
+  });
+
+  it("成果条目按「做了什么/结果/证据」结构化放入，空字段省略", () => {
+    const prompt = buildQuarterlyReportPrompt(QUARTERLY_FULL, 3);
+    expect(prompt).toContain("<user_quarterly_content>");
+    expect(prompt).toContain("成果 1");
+    expect(prompt).toContain("- 做了什么：完成日报、周报生成能力");
+    expect(prompt).toContain(
+      "- 产生的结果或影响：用户可以把零散工作整理为结构化汇报",
+    );
+    expect(prompt).toContain(
+      "- 数据或证据：完成 3 个核心页面，覆盖 5 档润色程度",
+    );
+    // 第二条成果只有 action：不应出现它的结果/证据行。
+    expect(prompt).toContain("成果 2");
+    expect(prompt).toContain("- 做了什么：上线 Prompt 解构页面");
+    expect(prompt).toContain("2026 年第三季度工作总结");
+  });
+
+  it("标题使用用户提供的季度名", () => {
+    const prompt = buildQuarterlyReportPrompt(QUARTERLY_FULL, 3);
+    expect(prompt).toContain("一级标题使用「2026 年第三季度工作总结」");
+  });
+
+  it("空可选分区不进 Prompt（未完成/风险为空时）", () => {
+    const prompt = buildQuarterlyReportPrompt(
+      { ...QUARTERLY_FULL, unfinished: "  ", risks: "" },
+      3,
+    );
+    expect(prompt).not.toContain("【未完成事项与复盘】");
+    expect(prompt).not.toContain("【风险与需要支持】");
+    expect(prompt).toContain("【下季度重点】");
+  });
+
+  it("缺目标 / 无有效成果 / 缺下季度重点 → 抛错，不进入 LLM 调用", () => {
+    expect(() =>
+      buildQuarterlyReportPrompt({ ...QUARTERLY_FULL, goals: "" }, 3),
+    ).toThrow();
+    expect(() =>
+      buildQuarterlyReportPrompt(
+        {
+          ...QUARTERLY_FULL,
+          achievements: [{ action: "", impact: "", evidence: "" }],
+        },
+        3,
+      ),
+    ).toThrow();
+    expect(() =>
+      buildQuarterlyReportPrompt(
+        { ...QUARTERLY_FULL, nextQuarterPriorities: "" },
+        3,
+      ),
+    ).toThrow();
+  });
+
+  it("非法等级被运行时校验拦截", () => {
+    expect(() =>
+      buildQuarterlyReportPrompt(QUARTERLY_FULL, 0 as PolishLevel),
+    ).toThrow();
+  });
+
+  it("是纯函数：同参多次调用结果一致", () => {
+    expect(buildQuarterlyReportPrompt(QUARTERLY_FULL, 4)).toBe(
+      buildQuarterlyReportPrompt(QUARTERLY_FULL, 4),
+    );
+  });
+});
+
+describe("hasAchievementContent", () => {
+  it("三字段任一非空即算有内容", () => {
+    expect(
+      hasAchievementContent({ action: "x", impact: "", evidence: "" }),
+    ).toBe(true);
+    expect(
+      hasAchievementContent({ action: "", impact: "y", evidence: "" }),
+    ).toBe(true);
+    expect(
+      hasAchievementContent({ action: "", impact: "", evidence: "z" }),
+    ).toBe(true);
+    expect(
+      hasAchievementContent({ action: " ", impact: "\n", evidence: "" }),
+    ).toBe(false);
   });
 });
 

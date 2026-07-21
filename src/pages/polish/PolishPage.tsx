@@ -6,12 +6,13 @@ import { useTrialChannel } from "@/lib/llm/trial";
 import { useSettings } from "@/stores/settings";
 import { DailyReport } from "./DailyReport";
 import type { ReportType } from "./prompts";
+import { QuarterlyReport } from "./QuarterlyReport";
 import { WeeklyReport } from "./WeeklyReport";
 
 const REPORT_TABS: { type: ReportType; label: string; enabled: boolean }[] = [
   { type: "daily", label: "日报", enabled: true },
   { type: "weekly", label: "周报", enabled: true },
-  { type: "quarterly", label: "季度汇报", enabled: false },
+  { type: "quarterly", label: "季度汇报", enabled: true },
 ];
 
 export function PolishPage() {
@@ -91,6 +92,9 @@ export function PolishPage() {
       </div>
       <div hidden={active !== "weekly"}>
         <WeeklyReport llmReady={llmReady} />
+      </div>
+      <div hidden={active !== "quarterly"}>
+        <QuarterlyReport llmReady={llmReady} />
       </div>
     </section>
   );

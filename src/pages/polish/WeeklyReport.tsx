@@ -1,9 +1,8 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { PolishScale } from "./PolishScale";
 import {
   POLISH_LEVELS,
@@ -11,6 +10,7 @@ import {
   type WeeklyReportInput,
 } from "./prompts";
 import { ReportResultPanel } from "./ReportResultPanel";
+import { CollapsibleSection, Field } from "./reportFields";
 import { isWeeklyReportStale, useWeeklyReport } from "./useWeeklyReport";
 import { formatWeekLabel, shiftWeek, weekOf } from "./weekRange";
 
@@ -148,36 +148,19 @@ export function WeeklyReport({ llmReady }: WeeklyReportProps) {
           </Field>
 
           {/* 4) 风险与需要协助（可选，默认折叠） */}
-          <div className="space-y-2">
-            <button
-              type="button"
-              aria-expanded={risksExpanded}
-              onClick={() => setRisksOpen((v) => !v)}
-              className="flex w-full items-center gap-1.5 text-left"
-            >
-              <ChevronDown
-                className={cn(
-                  "size-3.5 text-faint transition-transform",
-                  risksExpanded ? "rotate-0" : "-rotate-90",
-                )}
-              />
-              <span className="text-ui-sm font-medium">风险与需要协助</span>
-              <span className="text-ui-xs text-faint">（可选）</span>
-            </button>
-            {risksExpanded && (
-              <div className="space-y-1 pl-5">
-                <p className="text-ui-xs text-faint">
-                  有哪些阻塞、风险，或需要别人支持的事情？
-                </p>
-                <Textarea
-                  value={risks}
-                  onChange={(e) => setRisks(e.target.value)}
-                  placeholder={RISK_PLACEHOLDER}
-                  className="min-h-24 text-ui leading-relaxed"
-                />
-              </div>
-            )}
-          </div>
+          <CollapsibleSection
+            title="风险与需要协助"
+            hint="有哪些阻塞、风险，或需要别人支持的事情？"
+            open={risksExpanded}
+            onToggle={() => setRisksOpen((v) => !v)}
+          >
+            <Textarea
+              value={risks}
+              onChange={(e) => setRisks(e.target.value)}
+              placeholder={RISK_PLACEHOLDER}
+              className="min-h-24 text-ui leading-relaxed"
+            />
+          </CollapsibleSection>
 
           {/* 润色程度（复用日报刻度） */}
           <div className="space-y-2">
@@ -225,30 +208,6 @@ export function WeeklyReport({ llmReady }: WeeklyReportProps) {
         emptyText="输入本周进展、问题和计划，生成一份结构清晰的周报。"
         onRegenerate={() => generate(currentInput, level)}
       />
-    </div>
-  );
-}
-
-/** 左侧带标题 + 说明的输入分区（progress / unfinished / nextWeekPlan 共用）。 */
-function Field({
-  title,
-  hint,
-  optional,
-  children,
-}: {
-  title: string;
-  hint: string;
-  optional?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-ui-sm font-medium">{title}</span>
-        {optional && <span className="text-ui-xs text-faint">（可选）</span>}
-      </div>
-      <p className="text-ui-xs text-faint">{hint}</p>
-      {children}
     </div>
   );
 }
