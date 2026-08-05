@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTrialChannel } from "@/lib/llm/trial";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/stores/settings";
+import { Segmented } from "../Segmented";
 import { PracticeGuide } from "./PracticeGuide";
 import {
   DEFAULT_SPEAK_STYLE,
@@ -172,31 +173,24 @@ export function EnglishTool() {
         </div>
       </div>
 
-      {/* ————— 表达方式 ————— */}
-      <div className="space-y-1.5">
-        <p className="text-ui-sm font-medium">表达方式</p>
-        <div className="flex flex-wrap gap-2">
-          {SPEAK_STYLES.map((s) => (
-            <Button
-              key={s.value}
-              type="button"
-              size="sm"
-              variant={s.value === style ? "default" : "outline"}
-              aria-pressed={s.value === style}
-              onClick={() => setStyle(s.value)}
-            >
-              {s.label}
-            </Button>
-          ))}
-        </div>
-        <p className="text-ui-xs text-faint">
-          {SPEAK_STYLES.find((s) => s.value === style)?.hint}
-        </p>
-      </div>
-
-      {/* ————— 生成 ————— */}
+      {/* ————— 表达方式 + 生成 —————
+          分段控件与主按钮同一行：控件是灰底轨道上的小芯片，主按钮是唯一的实心块，
+          层级一眼分明——两个同尺寸按钮竖叠会跟主操作抢注意力。 */}
       <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
+        {/* gap-6：分段控件是填色轨道、主按钮是实心块，挨太近会读成同一条工具栏。 */}
+        <div className="flex flex-wrap items-center gap-6">
+          {/* 去掉了可见的「表达方式」标题，靠标签自解释；SR 仍需要这个组名。 */}
+          <fieldset aria-label="表达方式">
+            <Segmented
+              value={style}
+              onChange={setStyle}
+              options={SPEAK_STYLES.map((s) => ({
+                value: s.value,
+                label: s.label,
+              }))}
+              className="w-44"
+            />
+          </fieldset>
           <Button onClick={submit} disabled={isBusy || !llmReady}>
             {isBusy ? (
               <>
@@ -213,6 +207,9 @@ export function EnglishTool() {
             </span>
           )}
         </div>
+        <p className="text-ui-xs text-faint">
+          {SPEAK_STYLES.find((s) => s.value === style)?.hint}
+        </p>
 
         {status === "error" && (
           <div className="space-y-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5">
