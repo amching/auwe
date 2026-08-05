@@ -4,6 +4,7 @@ import {
   Code2Icon,
   CompassIcon,
   type LucideIcon,
+  MessagesSquareIcon,
 } from "lucide-react";
 import { type ComponentType, lazy } from "react";
 import { TimestampTool } from "./timestamp/TimestampTool";
@@ -20,6 +21,10 @@ const LifeDesignTool = lazy(() =>
   import("./lifedesign/LifeDesignTool").then((m) => ({
     default: m.LifeDesignTool,
   })),
+);
+// 用英语学说话拖着 AI SDK，懒加载。
+const EnglishTool = lazy(() =>
+  import("./english/EnglishTool").then((m) => ({ default: m.EnglishTool })),
 );
 
 export type ToolCategory = "开发者" | "设计师" | "内容";
@@ -120,6 +125,28 @@ export const TOOLS: ToolMeta[] = [
     ],
     Icon: CompassIcon,
     Component: LifeDesignTool,
+    ai: true,
+  },
+  {
+    slug: "english",
+    name: "用英语学说话",
+    category: "内容",
+    description:
+      "先用中文写清想说的话，AI 转成地道英文，拿去生成语音跟读背诵。",
+    keywords: [
+      "english",
+      "speak",
+      "spoken",
+      "translate",
+      "英语",
+      "口语",
+      "说话",
+      "表达",
+      "翻译",
+      "跟读",
+    ],
+    Icon: MessagesSquareIcon,
+    Component: EnglishTool,
     ai: true,
   },
 ];
