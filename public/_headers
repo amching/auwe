@@ -1,0 +1,14 @@
+# Cloudflare Pages 响应头（Vite 会把 public/ 原样拷进 dist/）
+
+# 指纹分包（assets/<name>-<hash>.js）：内容变则文件名变，可以放心长缓存。
+# 站点默认给的是 max-age=14400, must-revalidate，等于每 4 小时回源校验一次，
+# 对永不改名的文件是纯浪费。
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML 入口与 SPA 路由：每次回源校验，部署后立刻拿到新的分包 hash。
+# （Pages 默认已是这个值，写出来是为了别被上面的通配规则带偏。）
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate

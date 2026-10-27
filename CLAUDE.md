@@ -43,11 +43,12 @@
 functions/
   api/trial/[[path]].ts          # Cloudflare Pages Function：试用通道代理（GET 探测 / POST chat/completions 流式透传；model 服务端钉死 + max_tokens 封顶）
 src/
-  main.tsx                       # 挂载 <App/>（StrictMode + createRoot）
-  App.tsx                        # createBrowserRouter：根布局 + 路由（/ 落地页、/resume、/prompt、/polish、/tools；页面级 lazy code-split）
+  main.tsx                       # 挂载 <App/>（StrictMode + createRoot）；注册 vite:preloadError 自愈
+  App.tsx                        # createBrowserRouter：根布局 + 路由（/ 落地页、/resume、/prompt、/polish、/tools；页面级 lazy code-split；每页挂 errorElement）
   index.css                      # Tailwind v4 + shadcn 主题变量
   components/
     layout/RootLayout.tsx        # 顶部导航 + <Outlet/>
+    layout/RouteError.tsx        # 路由级 errorElement：替代默认「Unexpected Application Error!」页
     layout/SettingsDialog.tsx    # endpoint / apiKey / model 表单 → settings store
     ui/                          # shadcn 组件（Base UI 底座，用 render 而非 asChild）
   pages/
@@ -99,7 +100,7 @@ src/
     llm/errors.ts                # describeLlmError：LLM 异常 → 可行动中文（接口层失败 vs 内容为空要分清；纯逻辑有测试）
     markdown/sanitize.ts         # 共享 rehype-sanitize schema
     markdown/MarkdownPreview.tsx # 唯一的 Markdown 渲染入口（已内置 sanitize）
-    utils.ts                     # shadcn 的 cn()
+    chunkReload.ts               # 部署后旧分包 404 自愈：认错 + 冷却期内只自动重载一次
   stores/
     settings.ts                  # zustand + persist → localStorage（endpoint/apiKey/model）
     resume.ts                    # zustand + persist → localStorage（简历 markdown 源）
