@@ -65,7 +65,8 @@ export const TOOLS: ToolMeta[] = [
     slug: "json",
     name: "JSON 格式化 / 查看",
     category: "开发者",
-    description: "格式化、压缩、容错修复、树视图浏览与搜索，大文档依然流畅。",
+    description:
+      "格式化、压缩、去除转义、容错修复、树视图浏览与搜索，大文档依然流畅。",
     keywords: [
       "json",
       "format",
@@ -77,6 +78,9 @@ export const TOOLS: ToolMeta[] = [
       "压缩",
       "美化",
       "修复",
+      "去除转义",
+      "unescape",
+      "转义",
     ],
     Icon: BracesIcon,
     Component: JsonTool,

@@ -38,6 +38,7 @@ import {
 } from "./model";
 import { parseJsonLenient } from "./parse";
 import { SAMPLE_JSON } from "./sampleJson";
+import { formatJsonValue, unescapeJson } from "./unescape";
 
 type Parsed =
   | {
@@ -236,6 +237,13 @@ export function JsonTool() {
     setDoc(`${JSON.stringify(outcome.value, null, space)}\n`);
   }
 
+  // —— 去除转义：剥掉文档外层多余的转义层，再按格式化输出 ——
+  function stripEscapes() {
+    const outcome = unescapeJson(doc);
+    if (!outcome.ok) return; // 内容不是 JSON：不动文档，也不打扰
+    setDoc(formatJsonValue(outcome.value));
+  }
+
   // —— 复制输出 ——
   const [copied, setCopied] = useState(false);
   useEffect(() => {
@@ -258,27 +266,39 @@ export function JsonTool() {
       {/* 左：源码编辑 */}
       <div className="relative min-h-0 min-w-0 flex-1 basis-0 border-b md:border-r md:border-b-0">
         <JsonEditor value={doc} onChange={setDoc} />
-        <div className="absolute right-3 bottom-3 z-10 flex items-center gap-0.5 rounded-full border bg-card/95 p-1 shadow-command backdrop-blur">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="rounded-full"
-            disabled={!parsed.ok}
-            onClick={() => reformat(2)}
-          >
-            格式化
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="rounded-full"
-            disabled={!parsed.ok}
-            onClick={() => reformat(undefined)}
-          >
-            压缩
-          </Button>
+        <div className="absolute right-3 bottom-3 z-10 flex items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-full border bg-card/95 p-1 shadow-command backdrop-blur">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              onClick={stripEscapes}
+            >
+              去除转义
+            </Button>
+            <div className="h-4 w-px shrink-0 bg-border" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              disabled={!parsed.ok}
+              onClick={() => reformat(2)}
+            >
+              格式化
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              disabled={!parsed.ok}
+              onClick={() => reformat(undefined)}
+            >
+              压缩
+            </Button>
+          </div>
         </div>
       </div>
 
