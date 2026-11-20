@@ -4,7 +4,6 @@ import {
   FileText,
   KeyRound,
   PenLine,
-  ScanText,
   ShieldCheck,
   Sparkles,
   SquareTerminal,
@@ -15,7 +14,7 @@ import { Button } from "@/components/ui/button";
 
 /**
  * 首页（/）：产品落地页。延续工具页的克制视觉——白面板、发丝边、灰绿强调，
- * 不做大插画/渐变营销页。结构：一句话价值 + 四个功能入口卡 + 隐私三点 + 页脚。
+ * 不做大插画/渐变营销页。结构：一句话价值 + 三个功能入口卡 + 隐私三点 + 页脚。
  * 文案与各页面的自我介绍保持一致（改功能描述时两边同步）。
  */
 
@@ -40,18 +39,6 @@ const FEATURES: Feature[] = [
       "原生打印导出 PDF：文字清晰、可选中、可搜索",
       "AI 润色以 Diff 审阅，接受才写回正文",
       "源文件随时导出 .md，不被工具锁定",
-    ],
-  },
-  {
-    to: "/prompt",
-    icon: ScanText,
-    nav: "解构",
-    title: "Prompt 解构",
-    desc: "把一段又长又难读的 Prompt 拆成目标、结构、约束与作用。",
-    points: [
-      "原文与结构双向定位，点谁都能找到谁",
-      "提炼 3–5 条可迁移的设计方法",
-      "生成去业务化的可复用 Prompt 骨架",
     ],
   },
   {
@@ -109,7 +96,7 @@ export function HomePage() {
           都值得一个称手的工具。
         </h1>
         <p className="mt-4 max-w-xl text-ui leading-relaxed text-muted-foreground sm:text-base">
-          写一份优雅的简历、把日报润色得体、看懂一段长 Prompt。A·U·WE
+          写一份优雅的简历、把日报润色得体、用小工具处理开发琐事。A·U·WE
           把这些做成纯客户端工具——内容与 API Key 只留在你的浏览器。
         </p>
         <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -117,14 +104,11 @@ export function HomePage() {
             开始写简历
             <ArrowRight data-icon="inline-end" />
           </Button>
-          <Button variant="outline" render={<Link to="/prompt" />}>
-            解构一段 Prompt
-          </Button>
         </div>
       </div>
 
-      {/* ————— 功能入口：与顶部导航一一对应的四张卡 ————— */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      {/* ————— 功能入口：与顶部导航一一对应的三张卡 ————— */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((f) => (
           <Link
             key={f.to}

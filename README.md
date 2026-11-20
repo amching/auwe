@@ -4,7 +4,7 @@
 
 **职场 AI 工具站 · 纯客户端 · 自带 Key（BYOK）**
 
-写好简历、写好汇报、拆解 Prompt——你的 API Key 只留在你自己的浏览器里，永不上传。
+写好简历、写好汇报、用好工具——你的 API Key 只留在你自己的浏览器里，永不上传。
 
 [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -23,7 +23,6 @@
 | 模块 | 能做什么 |
 |---|---|
 | 📄 **简历** | 用 Markdown 写简历，实时渲染成 A4 分页预览，浏览器原生打印导出**矢量 PDF**（文字可选中、可搜索）；内置视觉模板；接入 AI 后可对选区 / 段落 / 章节 / 全文提出润色建议，并在编辑器内以 **Diff 审阅**，接受才写回。 |
-| 🧩 **解构** | 粘贴一段长 Prompt，AI 把它拆解成**核心意图 → 逻辑结构 → 核心思想 → 可复用骨架**；原文片段与结构节点双向高亮联动，且所有摘录都会**逐字定位回原文**，定位不到即丢弃（反幻觉）。 |
 | ✍️ **文风** | 把零散的工作记录整理成规范汇报：**日报 / 周报 / 季度汇报**三档场景，五级润色刻度（朴实→浮夸，只改表达强度、不改事实）。内建**事实红线**杜绝虚构成果，流式逐字输出。 |
 | 🧰 **工具** | 常用小工具集合，⌘K 命令面板一键直达：**时间戳转换**、**JSON 格式化 / 查看**、**类型定义生成**（JSON/YAML/TOML/CSV → TS/Go/Rust）、**人生设计师**（斯坦福人生设计课 AI 教练）。 |
 
@@ -93,7 +92,7 @@ pnpm dev
 ```text
 functions/api/trial/   Cloudflare Pages Function：可选的官方试用通道代理
 src/
-  pages/               简历 / 解构 / 文风 / 工具 四大模块
+  pages/                简历 / 文风 / 工具 三大模块
   components/           布局与 shadcn/ui 组件
   lib/                  LLM 客户端 · Markdown 渲染与 sanitize · 工具函数
   stores/               Zustand 持久化状态

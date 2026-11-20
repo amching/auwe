@@ -26,7 +26,7 @@ const MAX_ACHIEVEMENTS = 5;
 
 const GOALS_PLACEHOLDER = `例如：
 - 完成职场工具站第一版
-- 上线日报、周报和 Prompt 解构功能`;
+- 上线日报、周报和简历编辑功能`;
 
 const PRIORITIES_PLACEHOLDER = `例如：
 - 完成核心功能上线

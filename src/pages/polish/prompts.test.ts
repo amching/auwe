@@ -286,14 +286,14 @@ describe("buildWeeklyReportPrompt", () => {
 const QUARTERLY_FULL: QuarterlyReportInput = {
   quarterLabel: "2026 年第三季度",
   quarterRange: "7 月 1 日 – 9 月 30 日",
-  goals: "- 完成职场工具站第一版\n- 上线日报、周报和 Prompt 解构功能",
+  goals: "- 完成职场工具站第一版\n- 上线日报、周报和简历编辑功能",
   achievements: [
     {
       action: "完成日报、周报生成能力",
       impact: "用户可以把零散工作整理为结构化汇报",
       evidence: "完成 3 个核心页面，覆盖 5 档润色程度",
     },
-    { action: "上线 Prompt 解构页面", impact: "", evidence: "" },
+    { action: "上线简历编辑页面", impact: "", evidence: "" },
   ],
   unfinished: "尚未进行真实用户验证",
   nextQuarterPriorities: "- 完成核心功能上线\n- 邀请真实用户使用",
@@ -334,7 +334,7 @@ describe("buildQuarterlyReportPrompt", () => {
     );
     // 第二条成果只有 action：不应出现它的结果/证据行。
     expect(prompt).toContain("成果 2");
-    expect(prompt).toContain("- 做了什么：上线 Prompt 解构页面");
+    expect(prompt).toContain("- 做了什么：上线简历编辑页面");
     expect(prompt).toContain("2026 年第三季度工作总结");
   });
 

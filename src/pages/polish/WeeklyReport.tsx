@@ -17,7 +17,7 @@ import { formatWeekLabel, shiftWeek, weekOf } from "./weekRange";
 const PROGRESS_PLACEHOLDER = `例如：
 - 完成登录页两个问题修复
 - 和后端确认接口调整方案
-- Prompt 解构页面完成第一版`;
+- 简历编辑页面完成第一版`;
 
 const UNFINISHED_PLACEHOLDER = `例如：
 - 新接口还没上线，等待后端联调`;
