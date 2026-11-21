@@ -1,0 +1,6 @@
+# Copy to .dev.vars and configure only if you want the optional trial channel.
+# Never put these values in VITE_* variables or commit the real .dev.vars file.
+TRIAL_ENDPOINT=""
+TRIAL_API_KEY=""
+TRIAL_MODEL=""
+TRIAL_PROVIDER=""

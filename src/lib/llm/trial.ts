@@ -6,12 +6,12 @@ import type { LlmConfig } from "./types";
 /**
  * 官方试用通道（BYOK 的兜底）。
  *
- * 试用的 endpoint / key / model 全部配置在 Cloudflare edge function 的环境变量里
- * （见 functions/api/trial/），前端只知道同源路径 /api/trial——key 永远不会出现在
+ * 试用的 endpoint / key / model 全部配置在 Cloudflare Worker 的环境变量里
+ * （见 worker/trial.ts），前端只知道同源路径 /api/trial——key 永远不会出现在
  * bundle、localStorage 或任何请求头里，DevTools 也看不到。
  *
- * 探测：GET /api/trial 返回 { provider, model } 即视为可用；本地 `pnpm dev` 没有
- * edge function（Vite 会回 404/HTML），自然降级为「不可用」，与未部署行为一致。
+ * 探测：GET /api/trial 返回 { provider, model } 即视为可用。
+ * 本地 `pnpm dev` 同时启动 Vite 与 Worker；未配置试用变量时返回 503。
  */
 
 export const TRIAL_BASE_URL = "/api/trial";

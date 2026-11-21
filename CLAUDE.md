@@ -1,6 +1,6 @@
 # auwe
 
-一个纯客户端（静态 SPA）的职场工具站，三个页面：
+一个浏览器优先的职场工具站（静态 SPA + Cloudflare Worker API），三个页面：
 
 1. **简历（Resume）** — 用 Markdown 编写，实时渲染成优雅的简历；支持用户传入 Endpoint + API_KEY，对内容做润色 / 提建议，用户依据建议手动改 Markdown。
 2. **文风（Polish）** — 帮用户润色职场语言、把工作量量化，成为更好的职场写手。
@@ -9,9 +9,9 @@
 ## 核心架构原则（改动前必须理解）
 
 - **纯客户端 BYOK**：LLM 调用**从浏览器直接发出**，API_KEY 只存在用户本地（localStorage），永不上送到我们的服务器。这是隐私卖点，不要引入需要托管密钥的后端。
-- 无传统后端、无数据库、无 SEO 需求 → 静态部署（Cloudflare Pages / Vercel）。
-- 需要服务端能力时，只用 edge function。现有用途：**官方试用通道代理**（`functions/api/trial/`，用户没配 BYOK 时兜底）；预留用途：CORS 代理（见下）。
-- **试用通道**：试用的 endpoint/key/model 全部存在 Cloudflare 环境变量（`TRIAL_ENDPOINT` / `TRIAL_API_KEY` / `TRIAL_MODEL` / 可选 `TRIAL_PROVIDER`），前端只知道同源路径 `/api/trial`。**任何托管密钥都不得进前端 bundle**——「内嵌但不显示」不算隐藏，DevTools 一眼可见。配置解析统一走 `src/lib/llm/trial.ts` 的 `resolveLlm()`（BYOK 优先，试用兜底）；本地 `pnpm dev` 没有 edge function，试用通道自然探测为不可用。
+- 无传统常驻后端、无数据库、无 SEO 需求 → Cloudflare Workers Static Assets 托管静态 SPA，Worker 承载可选 API。
+- 需要服务端能力时，只用 edge function。现有用途：**官方试用通道代理**（`worker/trial.ts`，用户没配 BYOK 时兜底）；预留用途：CORS 代理（见下）。
+- **试用通道**：试用的 endpoint/key/model 全部存在 Cloudflare 环境变量（`TRIAL_ENDPOINT` / `TRIAL_API_KEY` / `TRIAL_MODEL` / 可选 `TRIAL_PROVIDER`），前端只知道同源路径 `/api/trial`。**任何托管密钥都不得进前端 bundle**——「内嵌但不显示」不算隐藏，DevTools 一眼可见。配置解析统一走 `src/lib/llm/trial.ts` 的 `resolveLlm()`（BYOK 优先，试用兜底）；本地 `pnpm dev` 同时启动 Vite 与 Wrangler，Vite 将 `/api` 代理到本地 Worker；未配置 `.dev.vars` 时试用通道不可用。
 
 ## 技术栈（约定，勿擅自更换）
 
@@ -26,7 +26,7 @@
 | Markdown 编辑 | CodeMirror 6 |
 | Markdown 渲染 | react-markdown + remark-gfm + **rehype-sanitize** |
 | 工具链 | Biome（lint + format）、Vitest、Playwright |
-| 部署 | Cloudflare Pages / Vercel（保留 edge function 位） |
+| 部署 | Cloudflare Workers Static Assets + TypeScript Worker（`wrangler.jsonc`） |
 
 ## 铁律（这些最容易被带偏，务必遵守）
 
@@ -40,8 +40,13 @@
 ## 目录约定
 
 ```
-functions/
-  api/trial/[[path]].ts          # Cloudflare Pages Function：试用通道代理（GET 探测 / POST chat/completions 流式透传；model 服务端钉死 + max_tokens 封顶）
+worker/
+  index.ts                       # Worker 入口：/api 路由与静态资源兜底
+  trial.ts                       # 试用通道：GET 探测 / POST chat/completions 流式透传
+  responses.ts                   # API JSON 响应（no-store）
+wrangler.jsonc                   # 部署名称、兼容日期、静态资源与 API 路由
+worker-configuration.d.ts         # wrangler types 生成的绑定与运行时类型
+scripts/dev.mjs                  # 同时启动 Vite 与 Wrangler，并联动退出
 src/
   main.tsx                       # 挂载 <App/>（StrictMode + createRoot）；注册 vite:preloadError 自愈
   App.tsx                        # createBrowserRouter：根布局 + 路由（/ 落地页、/resume、/polish、/tools；页面级 lazy code-split；每页挂 errorElement）
@@ -107,11 +112,13 @@ src/
 
 | 命令 | 作用 |
 |---|---|
-| `pnpm dev` | 启动本地开发服务器（Vite） |
+| `pnpm dev` | 同时启动 Vite 与本地 Worker |
 | `pnpm build` | 类型检查（`tsc -b`）+ 构建静态产物到 `dist/` |
-| `pnpm preview` | 本地预览构建产物 |
+| `pnpm preview` | 使用 Wrangler 预览构建产物与 API |
 | `pnpm lint` | Biome 检查（lint + format 校验）。`src/components/ui/**` 与 `*.css` 不纳入 lint |
 | `pnpm format` | Biome 按规则格式化并写回 |
+| `pnpm deploy` | 构建并发布到 Cloudflare Workers |
+| `pnpm cf:types` | 更新 Worker 绑定与运行时类型；配置变化后执行 |
 | `pnpm test` | 运行 Vitest（`pnpm test run` 单次跑完退出） |
 
 ## 工作方式
@@ -119,3 +126,5 @@ src/
 - 组件级改动：直接实现 + 用 Playwright 打开页面截图/看 console 迭代，别先写长 plan。
 - 需要 plan mode 的场景：① 项目脚手架与目录结构；② 简历的数据模型 + 打印样式方案（返工成本高）。
 - 简历页视觉：值得走一遍 design token 流程（`artifact-design`），避免出来「像模板」。
+
+Cloudflare 的首次创建、密钥迁移、域名切换与回滚步骤见 `docs/cloudflare-workers.md`。不要删除旧 Pages 项目，直到 Workers 正式域名验证通过。

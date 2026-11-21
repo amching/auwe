@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
     "build": "tsc -b && vite build",
-    "preview": "vite preview",
+    "preview": "wrangler dev --ip 127.0.0.1",
+    "deploy": "pnpm build && wrangler deploy",
+    "cf:types": "wrangler types",
     "lint": "biome check .",
     "format": "biome format --write .",
     "test": "vitest"
@@ -46,6 +48,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "wrangler": "4.158.0",
     "@biomejs/biome": "^2.5.2",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.2",
@@ -60,5 +63,8 @@
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }
