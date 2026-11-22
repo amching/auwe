@@ -8,12 +8,14 @@ auwe 使用 React + Vite 构建静态 SPA，由 Workers Static Assets 分发；T
 
 使用 Node.js 24、pnpm 12.18.0：
 
+Node.js 版本由 `.nvmrc` 指定，pnpm 版本由 `package.json` 的 `packageManager` 固定。GitHub Actions 和 Cloudflare Workers Builds 均读取这些版本配置。
+
 ```bash
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-`pnpm-workspace.yaml` 允许 `esbuild` 和 `workerd` 执行安装脚本；`pnpm-lock.yaml` 锁定依赖版本。安装依赖时使用这两份配置。
+`pnpm-workspace.yaml` 的 `packages` 指定项目根目录，`allowBuilds` 允许 `esbuild` 和 `workerd` 执行安装脚本；`pnpm-lock.yaml` 锁定依赖版本。安装依赖时使用这两份配置。
 
 `pnpm dev` 同时启动 Vite 和 `127.0.0.1:8787` 上的 Wrangler，Vite 将 `/api` 请求代理到 Worker。退出时会停止两个进程。开发模式用 `public/` 作为 Worker 的资源目录，不需要预先构建 `dist/`。
 
@@ -64,7 +66,7 @@ pnpm deploy
 | 构建命令 | `pnpm build` |
 | 部署命令 | `pnpm exec wrangler deploy` |
 | Node.js 版本 | `24`，仓库提供 `.nvmrc` |
-| pnpm 版本 | `12.18.0` |
+| pnpm 版本 | `12.18.0`，由 `package.json` 的 `packageManager` 指定 |
 
 依赖按仓库的 `pnpm-lock.yaml` 和 `pnpm-workspace.yaml` 安装。Workers Builds 分别执行构建命令和部署命令。连接成功后，推送到 `main` 会触发自动部署。
 
@@ -131,4 +133,5 @@ GitHub Actions `Checks` 负责检查、构建和 `wrangler deploy --dry-run`；�
 - [Static Assets 绑定](https://developers.cloudflare.com/workers/static-assets/binding/)
 - [Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
 - [Workers Builds 配置](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/)
+- [构建环境与工具版本](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/)
 - [Worker Secrets](https://developers.cloudflare.com/workers/configuration/secrets/)

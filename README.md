@@ -39,6 +39,8 @@
 
 **环境要求**：Node.js ≥ 22.12（推荐 24） · [pnpm](https://pnpm.io) 12.18.0
 
+Node.js 版本由 `.nvmrc` 指定，pnpm 版本由 `package.json` 的 `packageManager` 固定，本地、GitHub Actions 和 Cloudflare Workers Builds 使用相同配置。
+
 ```bash
 git clone https://github.com/amching/auwe.git
 cd auwe
