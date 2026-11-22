@@ -114,7 +114,9 @@ pnpm exec wrangler login   # 首次授权 Cloudflare 账号
 pnpm deploy                # 构建并发布名为 auwe 的 Worker
 ```
 
-连接 Git 仓库时，在 Cloudflare 创建 **Workers 项目**，构建命令填 `pnpm build`，部署命令填 `pnpm exec wrangler deploy`。不要继续使用旧 Pages 项目的构建输出目录设置。
+`pnpm deploy` 构建项目并发布 `auwe` Worker；Worker 不存在时会自动创建。使用发布后输出的 `workers.dev` 地址验证，再绑定 `auwe.app`。
+
+需要 Git 自动部署时，在 Cloudflare 创建 **Workers 项目**并连接 `amching/auwe`，构建命令填 `pnpm build`，部署命令填 `pnpm exec wrangler deploy`。GitHub Actions `Checks` 负责验证，Workers Builds 负责自动部署。
 
 **可选：官方试用通道。** `worker/trial.ts` 读取服务端环境变量，前端继续使用同源 `/api/trial`，托管密钥不进入前端构建产物：
 
@@ -125,9 +127,9 @@ pnpm deploy                # 构建并发布名为 auwe 的 Worker
 | `TRIAL_MODEL` | 服务端固定的模型 id |
 | `TRIAL_PROVIDER` | 可选的展示用提供方名称 |
 
-不配置时试用接口返回 503，BYOK 功能照常可用。Pages 的变量和 Secret 不会自动迁入 Workers。
+不配置时试用接口返回 503，BYOK 功能照常可用。试用变量和 Secret 在 Worker 的运行时设置中配置，`.dev.vars` 用于本地开发。
 
-完整的首次发布、密钥迁移、`auwe.app` 域名切换和回滚步骤见 [Cloudflare Workers 部署指南](docs/cloudflare-workers.md)。
+完整的项目创建、发布、试用配置、访问验证和 `auwe.app` 域名绑定步骤见 [Cloudflare Workers 部署指南](docs/cloudflare-workers.md)。
 
 ## 🔒 安全与隐私
 

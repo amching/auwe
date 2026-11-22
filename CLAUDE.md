@@ -67,7 +67,7 @@ src/
       resume.css                 # 简历纸排版(.resume-paper) + 页框 + @page/@media print（模板共用）
       templates.ts               # 视觉模板注册表（id/label：clean / color）
       templates.css              # 模板样式：每模板一个 [data-resume-template] 块（--paper-* token + 作用域版式细则）
-      sampleResume.ts            # 默认模板 + 完整示例 + 旧教学注释迁移指纹（stripLegacyTutorialComment）
+      sampleResume.ts            # 默认模板与完整示例
       FormatGuideDialog.tsx      # 格式指南弹窗（4 条约定 + 完整示例双视图）；教程属 UI，不进简历正文
       ai/                        # AI 优化：选区/段落/章节/全文 → 流式建议 → 编辑器内 Diff 审阅 → 接受才写回
         store.ts                 # 会话状态机（zustand 非持久化）：idle/streaming/reviewing/applied；apply() 是唯一写回 useResume 的路径
@@ -97,7 +97,7 @@ src/
     llm/errors.ts                # describeLlmError：LLM 异常 → 可行动中文（接口层失败 vs 内容为空要分清；纯逻辑有测试）
     markdown/sanitize.ts         # 共享 rehype-sanitize schema
     markdown/MarkdownPreview.tsx # 唯一的 Markdown 渲染入口（已内置 sanitize）
-    chunkReload.ts               # 部署后旧分包 404 自愈：认错 + 冷却期内只自动重载一次
+    chunkReload.ts               # 动态分包加载失败自愈：冷却期内只自动重载一次
   stores/
     settings.ts                  # zustand + persist → localStorage（endpoint/apiKey/model）
     resume.ts                    # zustand + persist → localStorage（简历 markdown 源）
@@ -127,4 +127,4 @@ src/
 - 需要 plan mode 的场景：① 项目脚手架与目录结构；② 简历的数据模型 + 打印样式方案（返工成本高）。
 - 简历页视觉：值得走一遍 design token 流程（`artifact-design`），避免出来「像模板」。
 
-Cloudflare 的首次创建、密钥迁移、域名切换与回滚步骤见 `docs/cloudflare-workers.md`。不要删除旧 Pages 项目，直到 Workers 正式域名验证通过。
+Worker 创建、发布、试用配置、访问验证和 `auwe.app` 域名绑定步骤见 `docs/cloudflare-workers.md`。命令行发布使用 Wrangler；GitHub 自动部署使用 Workers Builds；GitHub Actions `Checks` 负责检查与构建验证。
