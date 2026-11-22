@@ -117,7 +117,6 @@ src/
 | `pnpm preview` | 使用 Wrangler 预览构建产物与 API |
 | `pnpm lint` | Biome 检查（lint + format 校验）。`src/components/ui/**` 与 `*.css` 不纳入 lint |
 | `pnpm format` | Biome 按规则格式化并写回 |
-| `pnpm deploy` | 构建并发布到 Cloudflare Workers |
 | `pnpm cf:types` | 更新 Worker 绑定与运行时类型；配置变化后执行 |
 | `pnpm test` | 运行 Vitest（`pnpm test run` 单次跑完退出） |
 
@@ -127,4 +126,4 @@ src/
 - 需要 plan mode 的场景：① 项目脚手架与目录结构；② 简历的数据模型 + 打印样式方案（返工成本高）。
 - 简历页视觉：值得走一遍 design token 流程（`artifact-design`），避免出来「像模板」。
 
-Worker 创建、发布、试用配置、访问验证和 `auwe.app` 域名绑定步骤见 `docs/cloudflare-workers.md`。命令行发布使用 Wrangler；GitHub 自动部署使用 Workers Builds；GitHub Actions `Checks` 负责检查与构建验证。
+Worker 创建、发布、试用配置、访问验证和 `auwe.app` 域名绑定步骤见 `docs/cloudflare-workers.md`。推送到 `main` 后由 Workers Builds 自动构建和部署；GitHub Actions `Checks` 负责检查与构建验证。

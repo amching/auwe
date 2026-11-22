@@ -59,7 +59,6 @@ pnpm dev
 | `pnpm dev` | 同时启动 Vite（前端）与 Wrangler（Worker API） |
 | `pnpm build` | 类型检查（`tsc -b`）+ 构建静态产物到 `dist/` |
 | `pnpm preview` | 通过 Wrangler 预览构建产物和 Worker API |
-| `pnpm deploy` | 构建并发布到 Cloudflare Workers |
 | `pnpm cf:types` | 生成 Worker 绑定与运行时类型 |
 | `pnpm lint` | 代码检查（Biome，lint + format 校验） |
 | `pnpm format` | 按规则格式化并写回（Biome） |
@@ -108,17 +107,9 @@ src/
 
 项目部署到 **Cloudflare Workers**：静态资源由 Static Assets 分发，`/api/*` 由 Worker 处理，前端深层路由回退到 `index.html`。
 
-```bash
-pnpm install --frozen-lockfile
-pnpm build
-pnpm preview               # 本地验证实际 Worker 和 dist/ 静态产物
-pnpm exec wrangler login   # 首次授权 Cloudflare 账号
-pnpm deploy                # 构建并发布名为 auwe 的 Worker
-```
+在 Cloudflare 创建 **Workers 项目**并连接 `amching/auwe`，项目名称填 `auwe`，生产分支选 `main`，构建命令填 `pnpm build`，部署命令填 `pnpm exec wrangler deploy`。GitHub Actions `Checks` 负责验证，Workers Builds 在推送到 `main` 后自动构建和部署。
 
-`pnpm deploy` 构建项目并发布 `auwe` Worker；Worker 不存在时会自动创建。使用发布后输出的 `workers.dev` 地址验证，再绑定 `auwe.app`。
-
-需要 Git 自动部署时，在 Cloudflare 创建 **Workers 项目**并连接 `amching/auwe`，构建命令填 `pnpm build`，部署命令填 `pnpm exec wrangler deploy`。GitHub Actions `Checks` 负责验证，Workers Builds 负责自动部署。
+使用 Cloudflare 提供的 `workers.dev` 地址验证，再绑定 `auwe.app`。在 Worker 的 Deployments 中查看发布状态和构建日志。
 
 **可选：官方试用通道。** `worker/trial.ts` 读取服务端环境变量，前端继续使用同源 `/api/trial`，托管密钥不进入前端构建产物：
 
@@ -129,7 +120,7 @@ pnpm deploy                # 构建并发布名为 auwe 的 Worker
 | `TRIAL_MODEL` | 服务端固定的模型 id |
 | `TRIAL_PROVIDER` | 可选的展示用提供方名称 |
 
-不配置时试用接口返回 503，BYOK 功能照常可用。试用变量和 Secret 在 Worker 的运行时设置中配置，`.dev.vars` 用于本地开发。
+不配置时试用接口返回 503，BYOK 功能照常可用。试用变量和 Secret 在 Worker 的 **Settings → Runtime variables and secrets → Production** 中配置，点击 **Deploy** 生效。`keep_vars: true` 使自动发布保留控制台配置的普通变量；`.dev.vars` 用于本地开发。访问 `/api/trial` 返回 HTTP 200 即表示试用配置已被读取。
 
 完整的项目创建、发布、试用配置、访问验证和 `auwe.app` 域名绑定步骤见 [Cloudflare Workers 部署指南](docs/cloudflare-workers.md)。
 

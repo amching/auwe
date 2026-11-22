@@ -6,6 +6,7 @@
   "workers_dev": true,
   "preview_urls": false,
   "upload_source_maps": true,
+  "keep_vars": true,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
