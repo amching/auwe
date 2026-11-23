@@ -1,11 +1,18 @@
 import { SettingsIcon } from "lucide-react";
 import { Suspense, useEffect } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigation,
+} from "react-router-dom";
 import { SettingsDialog } from "@/components/layout/SettingsDialog";
 import { Button } from "@/components/ui/button";
+import { preloadNavigation } from "@/lib/navigationPreload";
 import { cn } from "@/lib/utils";
 
-function PageFallback() {
+export function PageFallback() {
   return (
     <div className="flex flex-1 items-center justify-center text-ui text-muted-foreground">
       加载中…
@@ -24,6 +31,7 @@ export function RootLayout() {
   // 保持本名 auwe（wordmark 的间隔号是排印形态，不进 title）。与打印导出不冲突：
   // usePrintResume 打印时暂换标题、afterprint 还原，而这里只在 pathname 变化时写入。
   const { pathname } = useLocation();
+  const navigation = useNavigation();
   useEffect(() => {
     const item = NAV.find((n) =>
       n.end ? pathname === n.to : pathname.startsWith(n.to),
@@ -32,7 +40,12 @@ export function RootLayout() {
   }, [pathname]);
 
   return (
-    <div className="flex min-h-svh flex-col">
+    <div
+      className="flex min-h-svh flex-col"
+      onPointerOverCapture={preloadNavigation}
+      onFocusCapture={preloadNavigation}
+      onTouchStartCapture={preloadNavigation}
+    >
       {/* App shell header：半透明 canvas 底 + 发丝下边。
           布局用 grid-template-areas 做响应式降级：
           - 窄屏（< sm）两行：第一行「品牌 | 设置」，第二行「导航」通栏（可横向滚动）；
@@ -131,7 +144,19 @@ export function RootLayout() {
           </div>
         </div>
       </header>
-      <main className="flex flex-1 flex-col">
+      <main
+        className="relative flex flex-1 flex-col"
+        aria-busy={navigation.state !== "idle"}
+      >
+        {navigation.state !== "idle" && (
+          <div
+            role="status"
+            className="indeterminate-track absolute inset-x-0 top-0 z-20 h-0.5"
+          >
+            <span className="sr-only">正在打开页面…</span>
+            <span className="indeterminate-bar h-full" />
+          </div>
+        )}
         <Suspense fallback={<PageFallback />}>
           <Outlet />
         </Suspense>

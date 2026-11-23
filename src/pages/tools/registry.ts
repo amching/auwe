@@ -7,24 +7,29 @@ import {
   MessagesSquareIcon,
 } from "lucide-react";
 import { type ComponentType, lazy } from "react";
+import { moduleLoader } from "@/lib/moduleLoader";
 import { TimestampTool } from "./timestamp/TimestampTool";
 
 // JSON / 类型生成工具拖着 CodeMirror（大依赖），懒加载避免拖累工具网格/命令面板首屏。
+const loadJsonTool = moduleLoader(() => import("./json/JsonTool"));
 const JsonTool = lazy(() =>
-  import("./json/JsonTool").then((m) => ({ default: m.JsonTool })),
+  loadJsonTool().then((m) => ({ default: m.JsonTool })),
 );
+const loadTypegenTool = moduleLoader(() => import("./typegen/TypegenTool"));
 const TypegenTool = lazy(() =>
-  import("./typegen/TypegenTool").then((m) => ({ default: m.TypegenTool })),
+  loadTypegenTool().then((m) => ({ default: m.TypegenTool })),
 );
 // 人生设计师拖着 Markdown 渲染 + AI SDK，同样懒加载。
+const loadLifeDesignTool = moduleLoader(
+  () => import("./lifedesign/LifeDesignTool"),
+);
 const LifeDesignTool = lazy(() =>
-  import("./lifedesign/LifeDesignTool").then((m) => ({
-    default: m.LifeDesignTool,
-  })),
+  loadLifeDesignTool().then((m) => ({ default: m.LifeDesignTool })),
 );
 // 用英语学说话拖着 AI SDK，懒加载。
+const loadEnglishTool = moduleLoader(() => import("./english/EnglishTool"));
 const EnglishTool = lazy(() =>
-  import("./english/EnglishTool").then((m) => ({ default: m.EnglishTool })),
+  loadEnglishTool().then((m) => ({ default: m.EnglishTool })),
 );
 
 export type ToolCategory = "开发者" | "设计师" | "内容";
@@ -41,6 +46,8 @@ export interface ToolMeta {
   Icon: LucideIcon;
   /** 专注视图里渲染的工具本体 */
   Component: ComponentType;
+  /** Share the tool import between navigation, intent preload and React.lazy. */
+  preload?: () => Promise<unknown>;
   /** 需要宽幅工作区的工具（如双栏编辑器）；专注视图放宽容器。 */
   wide?: boolean;
   /** 需要 AI 能力（BYOK 或试用通道）；网格/面板/专注视图显示「AI」徽记。 */
@@ -84,6 +91,7 @@ export const TOOLS: ToolMeta[] = [
     ],
     Icon: BracesIcon,
     Component: JsonTool,
+    preload: loadJsonTool,
     wide: true,
   },
   {
@@ -109,6 +117,7 @@ export const TOOLS: ToolMeta[] = [
     ],
     Icon: Code2Icon,
     Component: TypegenTool,
+    preload: loadTypegenTool,
     wide: true,
   },
   {
@@ -129,6 +138,7 @@ export const TOOLS: ToolMeta[] = [
     ],
     Icon: CompassIcon,
     Component: LifeDesignTool,
+    preload: loadLifeDesignTool,
     ai: true,
   },
   {
@@ -151,6 +161,7 @@ export const TOOLS: ToolMeta[] = [
     ],
     Icon: MessagesSquareIcon,
     Component: EnglishTool,
+    preload: loadEnglishTool,
     ai: true,
   },
 ];

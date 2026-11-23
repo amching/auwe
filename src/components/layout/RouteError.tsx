@@ -1,15 +1,10 @@
 import { House, RotateCw, TriangleAlert } from "lucide-react";
+import { useEffect } from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { isChunkLoadError } from "@/lib/chunkReload";
+import { isChunkLoadError, reloadOnceForStaleChunk } from "@/lib/chunkReload";
 
-/**
- * 路由级 errorElement：替代 React Router 默认的「Unexpected Application Error!」
- * 开发者报错页。最常见的真实原因是**部署后旧分包 404**（页面还开着旧版 index.html，
- * 点开未加载过的路由时按旧 hash 取文件）。自动重载已在 chunkReload.ts 里做过一次，
- * 走到这里说明重载也没成功（离线 / 部署本身有问题），需要让用户自己再刷一次。
- */
-
+/** Recover stale chunks only after an actual navigation fails, never on prefetch. */
 function errorMessage(error: unknown): string {
   if (isRouteErrorResponse(error)) {
     return `${error.status} ${error.statusText}`;
@@ -22,6 +17,9 @@ function errorMessage(error: unknown): string {
 export function RouteError() {
   const error = useRouteError();
   const staleChunk = isChunkLoadError(error);
+  useEffect(() => {
+    if (staleChunk) reloadOnceForStaleChunk();
+  }, [staleChunk]);
 
   return (
     <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-6 py-16">

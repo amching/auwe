@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { reloadOnceForStaleChunk } from "@/lib/chunkReload";
 import { RouteError } from "./RouteError";
 
 /**
@@ -8,7 +9,15 @@ import { RouteError } from "./RouteError";
  * 页面 lazy 加载失败时要能看到「版本已过期」的文案，而不是 React Router 的默认错误页。
  */
 
-afterEach(cleanup);
+vi.mock("@/lib/chunkReload", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/chunkReload")>()),
+  reloadOnceForStaleChunk: vi.fn().mockReturnValue(false),
+}));
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 function renderWithThrowingPage(error: Error) {
   const router = createMemoryRouter([
@@ -38,6 +47,7 @@ describe("RouteError", () => {
     );
 
     expect(await screen.findByText("页面版本已过期")).toBeInTheDocument();
+    expect(reloadOnceForStaleChunk).toHaveBeenCalledOnce();
     expect(
       screen.getByRole("button", { name: /刷新页面/ }),
     ).toBeInTheDocument();
@@ -51,6 +61,7 @@ describe("RouteError", () => {
     renderWithThrowingPage(new Error("Cannot read properties of null"));
 
     expect(await screen.findByText("页面出了点问题")).toBeInTheDocument();
+    expect(reloadOnceForStaleChunk).not.toHaveBeenCalled();
     expect(screen.queryByText("页面版本已过期")).not.toBeInTheDocument();
     // 原始信息收在「技术细节」里，方便用户反馈
     expect(

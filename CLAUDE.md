@@ -48,12 +48,12 @@ wrangler.jsonc                   # 部署名称、兼容日期、静态资源与
 worker-configuration.d.ts         # wrangler types 生成的绑定与运行时类型
 scripts/dev.mjs                  # 同时启动 Vite 与 Wrangler，并联动退出
 src/
-  main.tsx                       # 挂载 <App/>（StrictMode + createRoot）；注册 vite:preloadError 自愈
-  App.tsx                        # createBrowserRouter：根布局 + 路由（/ 落地页、/resume、/polish、/tools；页面级 lazy code-split；每页挂 errorElement）
+  main.tsx                       # 挂载 <App/>（StrictMode + createRoot）
+  App.tsx                        # createBrowserRouter：路由模块并行 lazy + 工具 loader；每页挂 errorElement
   index.css                      # Tailwind v4 + shadcn 主题变量
   components/
     layout/RootLayout.tsx        # 顶部导航 + <Outlet/>
-    layout/RouteError.tsx        # 路由级 errorElement：替代默认「Unexpected Application Error!」页
+    layout/RouteError.tsx        # 路由级 errorElement：实际导航分包失败时自动重载一次；预加载失败不打断当前页面
     layout/SettingsDialog.tsx    # endpoint / apiKey / model 表单 → settings store
     ui/                          # shadcn 组件（Base UI 底座，用 render 而非 asChild）
   pages/
@@ -97,6 +97,9 @@ src/
     llm/errors.ts                # describeLlmError：LLM 异常 → 可行动中文（接口层失败 vs 内容为空要分清；纯逻辑有测试）
     markdown/sanitize.ts         # 共享 rehype-sanitize schema
     markdown/MarkdownPreview.tsx # 唯一的 Markdown 渲染入口（已内置 sanitize）
+    pageModules.ts               # 页面模块共享加载器；页面/工具并行加载与意图预加载
+    navigationPreload.ts         # 链接悬停/聚焦/触摸预加载，尊重省流与慢速连接
+    moduleLoader.ts              # 合并在途加载并缓存成功结果，失败后允许重试
     chunkReload.ts               # 动态分包加载失败自愈：冷却期内只自动重载一次
   stores/
     settings.ts                  # zustand + persist → localStorage（endpoint/apiKey/model）
